@@ -1,4 +1,4 @@
-# Ticksy
+<img width="414" height="896" alt="mark-attendance" src="https://github.com/user-attachments/assets/b7d86c95-67c3-4452-9a8d-f3abd3fd3f26" /># Ticksy
 
 i made this neat little app for my mom. yup, you read that right.
 
@@ -21,13 +21,13 @@ Ticksy helps with:
 <table>
   <tr>
     <td><img src="ss%20from%20my%20phone/landing.PNG" alt="Landing page" width="260" /></td>
-    <td><img src="ss%20from%20my%20phone/sign%20up.PNG" alt="Sign up page" width="260" /></td>
-    <td><img src="ss%20from%20my%20phone/home%20pag.PNG" alt="Home dashboard" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/signup.PNG" alt="Sign up page" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/home.PNG" alt="Home dashboard" width="260" /></td>
   </tr>
   <tr>
-    <td><img src="ss%20from%20my%20phone/OCR%20to%20checklist.PNG" alt="Workout checklist" width="260" /></td>
-    <td><img src="ss%20from%20my%20phone/marking%20presentee%20panel.PNG" alt="Mark attendance" width="260" /></td>
-    <td><img src="ss%20from%20my%20phone/attendance%20overview.PNG" alt="Attendance overview" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/ocr-checklist.PNG" alt="Workout checklist" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/mark-attendance.PNG" alt="Mark attendance" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/attendance-overview.PNG" alt="Attendance overview" width="260" /></td>
   </tr>
 </table>
 
