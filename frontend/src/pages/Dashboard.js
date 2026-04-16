@@ -211,6 +211,7 @@ export default function Dashboard() {
   const [showUpload, setShowUpload] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrError, setOcrError] = useState('')
+  const [checklistTitle, setChecklistTitle] = useState('')
   const [checklistText, setChecklistText] = useState('')
   const [sourceImageName, setSourceImageName] = useState('')
   const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
@@ -285,6 +286,7 @@ export default function Dashboard() {
   }
 
   const resetChecklistComposer = () => {
+    setChecklistTitle('')
     setChecklistText('')
     setSourceImageName('')
     setOcrError('')
@@ -315,6 +317,7 @@ export default function Dashboard() {
       setChecklistText(lines.join('\n'))
       if (detectedWorkoutDate) {
         setWorkoutDate(detectedWorkoutDate)
+        setChecklistTitle(formatDateLabel(detectedWorkoutDate))
       }
     } catch (error) {
       console.error('Failed to extract workout text', error)
@@ -346,13 +349,12 @@ export default function Dashboard() {
 
     const checklistDate = workoutDate || new Date().toISOString().split('T')[0]
     const newChecklist = {
-      title: formatDateLabel(checklistDate),
+      title: checklistTitle.trim() || formatDateLabel(checklistDate),
       content: `Checklist with ${items.length} items`,
       kind: 'checklist',
       checklist_items: items,
       source_image_name: sourceImageName || null,
       workout_date: checklistDate,
-      keep_forever: false,
       user_id: user.id,
     }
 
@@ -613,12 +615,20 @@ export default function Dashboard() {
             </p>
 
             <input
-              type="date"
-              value={workoutDate}
-              onChange={(e) => setWorkoutDate(e.target.value)}
-              className="w-full rounded-full border-2 bg-white px-4 py-3 text-ticksy-navy font-body text-sm mt-4"
+              type="text"
+              value={checklistTitle}
+              onChange={(e) => setChecklistTitle(e.target.value)}
+              placeholder={formatDateLabel(workoutDate)}
+              className="w-full rounded-full border-2 bg-white px-4 py-3 text-ticksy-navy placeholder-slate-400 font-body text-sm mt-4"
               style={{ borderColor: 'rgba(15,27,76,0.15)' }}
             />
+
+            <div
+              className="w-full rounded-full border-2 bg-white px-4 py-3 text-center text-ticksy-navy font-body text-sm mt-4"
+              style={{ borderColor: 'rgba(15,27,76,0.15)' }}
+            >
+              Workout date: {formatDateLabel(workoutDate)}
+            </div>
 
             <label
               onDrop={handleDrop}
