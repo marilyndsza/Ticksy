@@ -28,6 +28,14 @@ const getDisplayName = (user) =>
   getLoginId(user) ||
   'Trainer'
 
+const withTimeout = (promise, message = 'Request timed out. Please check your connection and try again.') =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), 12000)
+    }),
+  ])
+
 const isSupabaseAuthLoadError = (error) => {
   const message = error?.message || String(error || '')
   const name = error?.name || ''
@@ -114,14 +122,20 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signUp = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await withTimeout(
+      supabase.auth.signUp({ email, password }),
+      'Sign up is taking too long. Please check your Supabase setup and try again.'
+    )
     if (error) throw error
     return data
   }
 
   const signIn = async (identifier, password) => {
     const email = resolveLoginEmail(identifier)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await withTimeout(
+      supabase.auth.signInWithPassword({ email, password }),
+      'Login is taking too long. Please check your Supabase setup and try again.'
+    )
     if (error) throw error
     return data
   }

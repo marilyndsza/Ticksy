@@ -72,11 +72,8 @@ export default function Login() {
             required
             className="w-full rounded-full border-2 border-ticksy-navy bg-white px-6 py-4 text-ticksy-navy placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-ticksy-navy/20 font-body font-medium transition-all"
           />
-          <p className="text-center font-body text-xs text-ticksy-navy/60 -mt-1">
-            Use your email or login ID. Demo ID: <strong>demo</strong>
-          </p>
           {isUsingLocalSupabase && (
-            <p className="text-center font-body text-xs text-ticksy-blue -mt-2">
+            <p className="text-center font-body text-xs text-ticksy-blue -mt-1">
               Local demo mode is active on this machine.
             </p>
           )}
