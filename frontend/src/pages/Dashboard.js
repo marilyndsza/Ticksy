@@ -77,12 +77,14 @@ const parseChecklistLines = (text = '') => {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
+  const dateLineIndex = rawLines.findIndex((line) => DATE_PATTERN.test(line))
+  const workoutLines = dateLineIndex >= 0 ? rawLines.slice(dateLineIndex + 1) : rawLines
 
-  const hasBullets = rawLines.some((line) => BULLET_PATTERN.test(line))
+  const hasBullets = workoutLines.some((line) => BULLET_PATTERN.test(line))
   if (hasBullets) {
     const combinedBulletLines = []
 
-    rawLines.forEach((line) => {
+    workoutLines.forEach((line) => {
       const cleaned = sanitizeChecklistLine(line)
       if (!cleaned || isLikelyHeaderLine(cleaned)) return
 
@@ -100,7 +102,7 @@ const parseChecklistLines = (text = '') => {
     return combinedBulletLines.filter((line) => line.length > 1)
   }
 
-  const cleanedLines = rawLines
+  const cleanedLines = workoutLines
     .map(sanitizeChecklistLine)
     .filter((line) => line.length > 1 && !isLikelyHeaderLine(line))
 
@@ -143,11 +145,6 @@ function WorkoutChecklistCard({ checklist, onToggleItem, onDeleteChecklist, onTo
           <p className="font-body text-xs text-ticksy-navy/45 mt-1">
             Workout date: {formatDateLabel(checklist.workout_date || checklist.created_at?.split('T')[0])}
           </p>
-          {checklist.source_image_name && (
-            <p className="font-body text-xs text-ticksy-navy/45 mt-1">
-              Source image: {checklist.source_image_name}
-            </p>
-          )}
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <button
@@ -214,7 +211,6 @@ export default function Dashboard() {
   const [showUpload, setShowUpload] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrError, setOcrError] = useState('')
-  const [checklistTitle, setChecklistTitle] = useState('')
   const [checklistText, setChecklistText] = useState('')
   const [sourceImageName, setSourceImageName] = useState('')
   const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
@@ -289,7 +285,6 @@ export default function Dashboard() {
   }
 
   const resetChecklistComposer = () => {
-    setChecklistTitle('')
     setChecklistText('')
     setSourceImageName('')
     setOcrError('')
@@ -321,9 +316,6 @@ export default function Dashboard() {
       if (detectedWorkoutDate) {
         setWorkoutDate(detectedWorkoutDate)
       }
-      if (!checklistTitle.trim() && detectedWorkoutDate) {
-        setChecklistTitle(formatDateLabel(detectedWorkoutDate))
-      }
     } catch (error) {
       console.error('Failed to extract workout text', error)
       setOcrError('Could not read that image. Please try a clearer screenshot or photo.')
@@ -350,17 +342,38 @@ export default function Dashboard() {
     if (items.length === 0) return
 
     setSavingChecklist(true)
-    await supabase.from('notes').insert({
-      title: checklistTitle.trim() || formatDateLabel(workoutDate || new Date().toISOString().split('T')[0]),
+    setOcrError('')
+
+    const checklistDate = workoutDate || new Date().toISOString().split('T')[0]
+    const newChecklist = {
+      title: formatDateLabel(checklistDate),
       content: `Checklist with ${items.length} items`,
       kind: 'checklist',
       checklist_items: items,
       source_image_name: sourceImageName || null,
-      workout_date: workoutDate || new Date().toISOString().split('T')[0],
+      workout_date: checklistDate,
       keep_forever: false,
       user_id: user.id,
-    })
+    }
+
+    const { data, error } = await supabase
+      .from('notes')
+      .insert(newChecklist)
+      .select('*')
+      .single()
+
     setSavingChecklist(false)
+
+    if (error) {
+      console.error('Failed to create checklist', error)
+      setOcrError(error.message || 'Could not save this checklist. Please check your Supabase notes table migration.')
+      return
+    }
+
+    if (data) {
+      setChecklists((prev) => [data, ...prev])
+    }
+
     setShowUpload(false)
     resetChecklistComposer()
     fetchChecklists()
@@ -600,15 +613,6 @@ export default function Dashboard() {
             </p>
 
             <input
-              type="text"
-              value={checklistTitle}
-              onChange={(e) => setChecklistTitle(e.target.value)}
-              placeholder="Checklist title"
-              className="w-full rounded-full border-2 bg-white px-4 py-3 text-ticksy-navy placeholder-slate-400 font-body text-sm mt-4"
-              style={{ borderColor: 'rgba(15,27,76,0.15)' }}
-            />
-
-            <input
               type="date"
               value={workoutDate}
               onChange={(e) => setWorkoutDate(e.target.value)}
@@ -637,12 +641,6 @@ export default function Dashboard() {
                 className="hidden"
               />
             </label>
-
-            {sourceImageName && (
-              <p className="font-body text-xs text-ticksy-navy/50 mt-2">
-                Selected image: {sourceImageName}
-              </p>
-            )}
 
             {ocrError && (
               <p className="font-body text-sm text-red-500 mt-3">{ocrError}</p>

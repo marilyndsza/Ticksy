@@ -622,7 +622,7 @@ export default function StudentCalendar() {
           </div>
 
           {/* Calendar */}
-          <div className="ticksy-card flex justify-center">
+          <div className="ticksy-card flex justify-center !p-4 sm:!p-6">
             <Calendar
               mode="single"
               month={month}
@@ -631,7 +631,22 @@ export default function StudentCalendar() {
               onMonthChange={setMonth}
               modifiers={{ present: presentDates, absent: absentDates, scheduled: scheduledDates, holiday: holidays.map((date) => new Date(`${date}T00:00:00`)) }}
               modifiersClassNames={{ present: 'calendar-present', absent: 'calendar-absent', scheduled: 'calendar-scheduled', holiday: 'calendar-holiday' }}
-              className="font-body"
+              className="w-full max-w-[330px] p-1 font-body sm:max-w-[390px] sm:p-3"
+              classNames={{
+                month: 'w-full space-y-5',
+                caption: 'flex justify-center pt-1 relative items-center px-12',
+                caption_label: 'text-base font-semibold text-ticksy-navy',
+                nav_button: 'h-9 w-9 rounded-lg border border-ticksy-blue/15 bg-white p-0 opacity-80 hover:opacity-100',
+                nav_button_previous: 'absolute left-0',
+                nav_button_next: 'absolute right-0',
+                table: 'w-full border-collapse',
+                head_row: 'flex w-full justify-between',
+                head_cell: 'w-10 rounded-md text-center font-body text-sm font-semibold text-ticksy-navy/45',
+                row: 'flex w-full justify-between mt-3',
+                cell: 'relative p-0 text-center text-base focus-within:relative focus-within:z-20',
+                day: 'h-10 w-10 rounded-full p-0 font-body text-base font-semibold text-ticksy-navy/70 aria-selected:opacity-100 hover:bg-[#EAF3FF]',
+                day_outside: 'day-outside text-ticksy-navy/35 aria-selected:bg-accent/50 aria-selected:text-muted-foreground',
+              }}
             />
           </div>
 

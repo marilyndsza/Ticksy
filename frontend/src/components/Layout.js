@@ -42,7 +42,7 @@ export default function Layout() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 py-6 pb-[calc(9rem+env(safe-area-inset-bottom))]">
+      <main className="max-w-6xl mx-auto px-4 py-6 pb-[calc(12rem+env(safe-area-inset-bottom))]">
         <Outlet />
       </main>
 
