@@ -1,5 +1,3 @@
-<img width="414" height="896" alt="mark-attendance" src="https://github.com/user-attachments/assets/b7d86c95-67c3-4452-9a8d-f3abd3fd3f26" /># Ticksy
-
 i made this neat little app for my mom. yup, you read that right.
 
 my mom was after me trying to fix her very real problem of keeping track of her students, their attendance, and also making sure she actually covers everything she planned for class that day. so i built Ticksy, a small attendance + class checklist app
