@@ -20,14 +20,15 @@ Ticksy helps with:
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/landing.png" alt="Landing page" width="260" /></td>
-    <td><img src="docs/screenshots/signup.png" alt="Sign up page" width="260" /></td>
-    <td><img src="docs/screenshots/home.png" alt="Home dashboard" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/landing.PNG" alt="Landing page" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/sign%20up.PNG" alt="Sign up page" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/home%20pag.PNG" alt="Home dashboard" width="260" /></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/ocr-checklist.png" alt="Workout checklist" width="260" /></td>
-    <td><img src="docs/screenshots/mark-attendance.png" alt="Mark attendance" width="260" /></td>
-    <td><img src="docs/screenshots/attendance-overview.png" alt="Attendance overview" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/OCR%20to%20checklist.PNG" alt="Workout checklist" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/marking%20presentee%20panel.PNG" alt="Mark attendance" width="260" /></td>
+    <td><img src="ss%20from%20my%20phone/attendance%20overview.PNG" alt="Attendance overview" width="260" /></td>
   </tr>
 </table>
+
 
