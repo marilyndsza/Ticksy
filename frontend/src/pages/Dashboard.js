@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { createWorker } from 'tesseract.js'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useUI } from '../contexts/UIContext'
 import { supabase } from '../lib/supabase'
 import { attendsOnDay } from '../lib/studentSchedule'
 import { ChevronRight, Clock, ImagePlus, Pin, Trash2, Users, X } from 'lucide-react'
@@ -10,6 +11,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 const BULLET_PATTERN = /^[•●○◦▪■◆◇★☆*·●®]/u
 const DATE_PATTERN = /(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/
+const CONTINUATION_CONNECTOR_PATTERN = /\b(with|and|or|to|for|of|in|on|into|from|using)$/i
 
 const toIsoDate = (day, month, year) => {
   const normalizedYear = year.length === 2 ? `20${year}` : year
@@ -33,16 +35,42 @@ const sanitizeChecklistLine = (line = '') =>
 
 const isLikelyHeaderLine = (line = '') => {
   const lower = line.toLowerCase()
+  const compact = lower.replace(/[^a-z]/g, '')
   return (
+    DATE_PATTERN.test(line) ||
     lower.startsWith('date') ||
     lower.includes('fitness') ||
     lower.includes('souls') ||
     lower.includes('soulz') ||
     lower.includes('hussain') ||
+    lower.includes('luva') ||
+    /so+u?l/.test(compact) ||
+    compact.includes('soul') ||
+    compact.includes('fitness') ||
+    compact.includes('iness') ||
+    compact === 'ee' ||
+    compact === 'einess' ||
     lower === 'by' ||
     lower.length <= 1
   )
 }
+
+const shouldJoinContinuation = (previous = '', current = '') => {
+  if (!previous || !current) return false
+  if (current.toLowerCase() === 'rest') return false
+  return CONTINUATION_CONNECTOR_PATTERN.test(previous.trim())
+}
+
+const combineContinuationLines = (lines = []) => lines.reduce((combined, line) => {
+  if (combined.length > 0 && shouldJoinContinuation(combined[combined.length - 1], line)) {
+    const previous = combined[combined.length - 1]
+    combined[combined.length - 1] = `${previous} ${line}`.replace(/\s+/g, ' ').trim()
+    return combined
+  }
+
+  combined.push(line)
+  return combined
+}, [])
 
 const parseChecklistLines = (text = '') => {
   const rawLines = text
@@ -72,9 +100,11 @@ const parseChecklistLines = (text = '') => {
     return combinedBulletLines.filter((line) => line.length > 1)
   }
 
-  return rawLines
+  const cleanedLines = rawLines
     .map(sanitizeChecklistLine)
     .filter((line) => line.length > 1 && !isLikelyHeaderLine(line))
+
+  return combineContinuationLines(cleanedLines)
 }
 
 const formatDateLabel = (value) => {
@@ -175,6 +205,7 @@ function WorkoutChecklistCard({ checklist, onToggleItem, onDeleteChecklist, onTo
 
 export default function Dashboard() {
   const { user, getDisplayName } = useAuth()
+  const { setNavbarHidden } = useUI()
   const navigate = useNavigate()
   const [todaySlots, setTodaySlots] = useState([])
   const [studentCounts, setStudentCounts] = useState({})
@@ -205,6 +236,11 @@ export default function Dashboard() {
     fetchTodaySlots()
     fetchChecklists()
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setNavbarHidden(showUpload || Boolean(reviewChecklist))
+    return () => setNavbarHidden(false)
+  }, [showUpload, reviewChecklist, setNavbarHidden])
 
   const fetchTodaySlots = async () => {
     if (!user) return
@@ -542,7 +578,7 @@ export default function Dashboard() {
       </div>
 
       {showUpload && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowUpload(false)}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 pt-20 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:items-center sm:py-6" onClick={() => setShowUpload(false)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
             className="relative w-full max-w-md rounded-[28px] bg-white p-6 pb-8 shadow-[0_24px_80px_rgba(15,27,76,0.22)]"
@@ -560,6 +596,7 @@ export default function Dashboard() {
 
             <p className="font-body text-sm text-ticksy-navy/60">
               Upload a workout image and I&apos;ll turn the text into a checklist you can tick off on this page.
+              Bullet points work best: each bullet becomes one checklist item, and wrapped lines stay attached.
             </p>
 
             <input
@@ -633,7 +670,7 @@ export default function Dashboard() {
       )}
 
       {reviewChecklist && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setReviewChecklist(null)}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 pt-20 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:items-center sm:py-6" onClick={() => setReviewChecklist(null)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
             className="relative w-full max-w-lg rounded-[28px] bg-white p-6 shadow-[0_24px_80px_rgba(15,27,76,0.22)]"

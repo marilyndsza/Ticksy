@@ -42,7 +42,7 @@ export default function Layout() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 py-6 pb-32">
+      <main className="max-w-6xl mx-auto px-4 py-6 pb-[calc(9rem+env(safe-area-inset-bottom))]">
         <Outlet />
       </main>
 
@@ -51,7 +51,7 @@ export default function Layout() {
       <nav
         data-testid="bottom-navbar"
         className="fixed z-50"
-        style={{ bottom: 72, left: 16, right: 16, maxWidth: 400, margin: '0 auto' }}
+        style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))', left: 16, right: 16, maxWidth: 400, margin: '0 auto' }}
       >
         <div
           className="flex items-center rounded-full"
