@@ -360,18 +360,6 @@ export default function StudentCalendar() {
       },
     })
 
-    const footerY = doc.lastAutoTable.finalY + 28
-    doc.setDrawColor(210, 224, 248)
-    doc.roundedRect(40, footerY, pageWidth - 80, 52, 16, 16)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(12)
-    doc.setTextColor(13, 60, 164)
-    doc.text(`Trainer: ${trainerName}`, 56, footerY + 22)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.setTextColor(71, 85, 105)
-    doc.text(`Ticksy attendance summary for ${selectedBatch.title} · ${fullMonthLabel}`, 56, footerY + 40)
-
     doc.save(`${selectedBatch.title}-${fullMonthLabel.replace(/\s+/g, '-')}-attendance-report.pdf`)
   }
 
@@ -644,8 +632,8 @@ export default function StudentCalendar() {
                 head_cell: 'w-10 rounded-md text-center font-body text-sm font-semibold text-ticksy-navy/45',
                 row: 'flex w-full justify-between mt-3',
                 cell: 'relative p-0 text-center text-base focus-within:relative focus-within:z-20',
-                day: 'h-10 w-10 rounded-full p-0 font-body text-base font-semibold text-ticksy-navy/70 aria-selected:opacity-100 hover:bg-[#EAF3FF]',
-                day_outside: 'day-outside text-ticksy-navy/35 aria-selected:bg-accent/50 aria-selected:text-muted-foreground',
+                day: 'h-10 w-10 rounded-full p-0 font-body text-base font-semibold text-[#4B5563] aria-selected:opacity-100 hover:bg-[#EAF3FF]',
+                day_outside: 'day-outside !text-slate-300 aria-selected:bg-accent/50 aria-selected:!text-slate-300',
               }}
             />
           </div>
