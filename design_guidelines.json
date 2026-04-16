@@ -1,0 +1,107 @@
+{
+  "theme": "light",
+  "archetype": "6 (Vibrant Play)",
+  "vibe": "Friendly, approachable, playful, smart, education-focused",
+  "colors": {
+    "background": {
+      "primary": "#FFC0CB",
+      "primary_tailwind": "bg-[#FFC0CB]",
+      "secondary": "#FFE4E8",
+      "secondary_tailwind": "bg-[#FFE4E8]",
+      "card": "#FFFFFF",
+      "card_tailwind": "bg-white"
+    },
+    "text": {
+      "primary": "#1A202C",
+      "primary_tailwind": "text-slate-900",
+      "secondary": "#4A5568",
+      "secondary_tailwind": "text-slate-700",
+      "heading": "#0F172A",
+      "heading_tailwind": "text-slate-900"
+    },
+    "border": {
+      "primary": "#0F172A",
+      "primary_tailwind": "border-slate-900",
+      "light": "#CBD5E1",
+      "light_tailwind": "border-slate-300"
+    },
+    "action": {
+      "primary_bg": "#0F172A",
+      "primary_bg_tailwind": "bg-slate-900",
+      "primary_text": "#FFFFFF",
+      "primary_text_tailwind": "text-white",
+      "hover": "#1E293B",
+      "hover_tailwind": "bg-slate-800"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "heading": "'Fredoka', sans-serif",
+      "body": "'Nunito', sans-serif"
+    },
+    "scale": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight",
+      "h2": "text-3xl sm:text-4xl font-bold tracking-tight",
+      "h3": "text-2xl sm:text-3xl font-bold tracking-tight",
+      "h4": "text-xl font-bold",
+      "body_large": "text-lg",
+      "body_base": "text-base",
+      "small": "text-sm font-semibold uppercase tracking-wider"
+    }
+  },
+  "spacing_and_layout": {
+    "container_padding": "px-6 md:px-12 lg:px-24",
+    "section_spacing": "py-16 md:py-24",
+    "card_padding": "p-8",
+    "grid_gap": "gap-8"
+  },
+  "components": {
+    "button": {
+      "base": "rounded-full font-bold transition-transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 inline-flex items-center justify-center",
+      "primary": "bg-slate-900 text-white hover:bg-slate-800 px-8 py-4 shadow-[0_4px_0_0_rgba(15,23,42,1)] active:shadow-none",
+      "secondary": "bg-white text-slate-900 border-2 border-slate-900 px-8 py-4 shadow-[0_4px_0_0_rgba(15,23,42,1)] hover:bg-pink-50 active:shadow-none"
+    },
+    "input": {
+      "wrapper": "flex flex-col gap-2 relative",
+      "field": "w-full rounded-full border-2 border-slate-900 bg-white px-6 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-900/20 font-medium transition-all",
+      "label": "text-sm font-bold text-slate-900 ml-2"
+    },
+    "card": {
+      "container": "rounded-[32px] border-2 border-slate-900 bg-white p-8 shadow-[0_8px_0_0_rgba(15,23,42,1)] overflow-hidden relative"
+    },
+    "badges": {
+      "base": "inline-flex items-center rounded-full border-2 border-slate-900 px-3 py-1 text-xs font-bold",
+      "present": "bg-green-300 text-slate-900",
+      "absent": "bg-red-300 text-slate-900"
+    }
+  },
+  "visual_enhancers": {
+    "shapes": "Pill-shaped everything. Avoid sharp 90-degree corners.",
+    "decorations": "Include purely decorative pink/yellow sparkles (SVG stars) scattered around empty space in the hero section.",
+    "shadows": "Neo-brutalist style solid shadows (shadow-[0_4px_0_0_#0F172A]) on cards, inputs, and buttons to enhance the playful look.",
+    "borders": "Thick 2px solid dark borders (border-slate-900) on all actionable or distinct surface elements to give an illustrative 'coloring book' feel."
+  },
+  "media": {
+    "image_urls": {
+      "hero_illustration": {
+        "url": "https://images.pexels.com/photos/8617987/pexels-photo-8617987.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Engaged students in a diverse classroom raising hands. Use in hero section as the main visual."
+      },
+      "decorative_sparkles": {
+        "url": "https://images.unsplash.com/photo-1763773204012-95418b221270?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwzfHxwaW5rJTIwc3BhcmtsZXMlMjBhYnN0cmFjdHxlbnwwfHx8fDE3NzYyNzgzNzN8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract pink background element. Use at very low opacity (10-20%) as a background texture if needed, though pure #FFC0CB is preferred."
+      }
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly adhere to the #FFC0CB pink background and thick navy/slate-900 borders for all inputs, cards, and buttons.",
+    "All inputs and buttons MUST be pill-shaped (`rounded-full`).",
+    "Implement neo-brutalist solid drop shadows (`shadow-[0_4px_0_0_#0F172A]`) on buttons and cards to give it the requested playful, chunky vibe.",
+    "Use Fredoka (or similar rounded display font) for all headings, and Nunito for body text. Load them via Google Fonts in index.html.",
+    "For the Landing page: Add SVG sparkles/stars (4-point stars) around the hero text. You can use lucide-react 'Sparkles' icon customized.",
+    "For Daily Attendance: Use simple pill-shaped toggles or standard buttons for Present/Absent. No complex charts or analytics.",
+    "For Calendar View: Keep it simple. Highlight days where the student was present (green dot/background) vs absent (red dot/background).",
+    "Remember: Strict scope. DO NOT add analytics, charts, notifications, or AI.",
+    "Include 'data-testid' on all interactive elements (buttons, inputs, toggles) for testing."
+  ]
+}
