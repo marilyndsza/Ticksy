@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createWorker } from 'tesseract.js'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -116,7 +116,7 @@ const formatDateLabel = (value) => {
 }
 
 const formatChecklistTitle = (checklist) =>
-  formatDateLabel(checklist.workout_date || checklist.created_at?.split('T')[0])
+  checklist.title || formatDateLabel(checklist.workout_date || checklist.created_at?.split('T')[0])
 
 function WorkoutChecklistCard({ checklist, onToggleItem, onDeleteChecklist, onToggleKeep, onReviewChecklist }) {
   const items = Array.isArray(checklist.checklist_items) ? checklist.checklist_items : []
@@ -213,7 +213,6 @@ export default function Dashboard() {
   const [ocrError, setOcrError] = useState('')
   const [checklistTitle, setChecklistTitle] = useState('')
   const [checklistText, setChecklistText] = useState('')
-  const [sourceImageName, setSourceImageName] = useState('')
   const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
   const [dragActive, setDragActive] = useState(false)
   const [reviewChecklist, setReviewChecklist] = useState(null)
@@ -222,12 +221,6 @@ export default function Dashboard() {
   const reviewInputRefs = useRef([])
   const today = new Date()
   const dayOfWeek = today.getDay()
-  const sevenDayCutoff = useMemo(() => {
-    const cutoff = new Date()
-    cutoff.setDate(cutoff.getDate() - 7)
-    return cutoff.toISOString()
-  }, [])
-
   useEffect(() => {
     if (!user) return
     fetchTodaySlots()
@@ -268,14 +261,6 @@ export default function Dashboard() {
   }
 
   const fetchChecklists = async () => {
-    await supabase
-      .from('notes')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('kind', 'checklist')
-      .eq('keep_forever', false)
-      .lte('created_at', sevenDayCutoff)
-
     const { data } = await supabase
       .from('notes')
       .select('*')
@@ -288,7 +273,6 @@ export default function Dashboard() {
   const resetChecklistComposer = () => {
     setChecklistTitle('')
     setChecklistText('')
-    setSourceImageName('')
     setOcrError('')
     setWorkoutDate(new Date().toISOString().split('T')[0])
     setDragActive(false)
@@ -299,7 +283,6 @@ export default function Dashboard() {
 
     setOcrLoading(true)
     setOcrError('')
-    setSourceImageName(file.name)
 
     try {
       const worker = await createWorker('eng')
@@ -353,8 +336,6 @@ export default function Dashboard() {
       content: `Checklist with ${items.length} items`,
       kind: 'checklist',
       checklist_items: items,
-      source_image_name: sourceImageName || null,
-      workout_date: checklistDate,
       user_id: user.id,
     }
 
