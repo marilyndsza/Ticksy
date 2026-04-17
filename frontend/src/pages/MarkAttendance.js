@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUI } from '../contexts/UIContext'
 import { supabase } from '../lib/supabase'
 import { attendsOnDay } from '../lib/studentSchedule'
-import { Check, X } from 'lucide-react'
+import { Check, ChevronRight, ClipboardCheck, X } from 'lucide-react'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -119,6 +119,9 @@ export default function MarkAttendance() {
       <h1 className="font-heading text-4xl sm:text-5xl font-bold text-[#0D3CA4] mb-6 px-1">
         Mark Attendance
       </h1>
+      <p className="mb-5 px-1 font-body text-sm font-medium text-ticksy-navy/55">
+        Choose a batch below to open its attendance checklist for today.
+      </p>
 
       {loading ? (
         <div className="space-y-3">
@@ -158,14 +161,33 @@ export default function MarkAttendance() {
                   }}
                 />
               )}
-              <div className="relative z-10">
-              <p className="font-heading font-semibold text-ticksy-navy">{batch.title}</p>
-              <p className={`font-body text-sm ${
-                isSelected ? 'text-ticksy-navy/55' : 'text-ticksy-navy/60'
-              }`}>
-                {DAYS[batch.day_of_week]} &middot; {formatTime(batch.start_time)}
-                {batch.end_time && ` – ${formatTime(batch.end_time)}`}
-              </p>
+              <div className="relative z-10 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                      isSelected ? 'bg-[#D8E7FF] text-ticksy-blue' : 'bg-[#EEF5FF] text-ticksy-blue'
+                    }`}>
+                      <ClipboardCheck size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-heading font-semibold text-ticksy-navy">{batch.title}</p>
+                      <p className={`font-body text-sm ${
+                        isSelected ? 'text-ticksy-navy/55' : 'text-ticksy-navy/60'
+                      }`}>
+                        {DAYS[batch.day_of_week]} &middot; {formatTime(batch.start_time)}
+                        {batch.end_time && ` – ${formatTime(batch.end_time)}`}
+                      </p>
+                      <p className="mt-1 font-body text-xs font-semibold uppercase tracking-[0.18em] text-ticksy-blue/65">
+                        Tap to open checklist
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                  isSelected ? 'bg-white/80 text-ticksy-blue' : 'bg-[#F5F8FF] text-ticksy-blue/80'
+                }`}>
+                  <ChevronRight size={18} />
+                </div>
               </div>
                 </button>
               )

@@ -57,7 +57,7 @@ export default function StudentCalendar() {
 
   const fetchBatchStudents = async () => {
     const { data } = await supabase.from('student_slots')
-      .select('student_id, students(id, name, mode, selected_days, alternate_days, is_active)')
+      .select('student_id, students(id, name, mode, selected_days, alternate_days, payment_mode, fee_amount, is_active)')
       .eq('slot_id', selectedBatchId)
     const list = (data || [])
       .map(s => s.students)
@@ -247,6 +247,19 @@ export default function StudentCalendar() {
     return matches.length > 0 ? matches.join(', ') : 'None'
   }
 
+  const formatPaymentMode = (student) => {
+    if (student.payment_mode === 'online') return 'Online'
+    if (student.payment_mode === 'cash') return 'Cash'
+    return '—'
+  }
+
+  const formatFeeAmount = (student) => {
+    if (student.fee_amount == null || student.fee_amount === '') return '—'
+    const value = Number(student.fee_amount)
+    if (Number.isNaN(value)) return '—'
+    return `Rs ${value.toLocaleString('en-IN', { maximumFractionDigits: value % 1 === 0 ? 0 : 2 })}`
+  }
+
   const downloadMonthlyAttendance = () => {
     if (!selectedBatch || monthlySummary.length === 0) return
     const doc = new jsPDF({ unit: 'pt', format: 'a4' })
@@ -254,7 +267,7 @@ export default function StudentCalendar() {
     const trainerName = getTrainerName(user)
 
     doc.setFillColor(238, 245, 255)
-    doc.rect(0, 0, pageWidth, 150, 'F')
+    doc.rect(0, 0, pageWidth, 138, 'F')
     doc.setFillColor(13, 60, 164)
     doc.roundedRect(40, 34, 116, 28, 14, 14, 'F')
 
@@ -270,11 +283,18 @@ export default function StudentCalendar() {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(12)
     doc.setTextColor(71, 85, 105)
-    doc.text(`Overview for ${fullMonthLabel}`, 40, 112)
-    doc.text(`Trainer: ${trainerName}`, 40, 130)
-    doc.text(`Generated ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, pageWidth - 190, 130)
+    doc.text(`Overview for ${fullMonthLabel}`, 40, 108)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(13, 60, 164)
+    doc.text('TRAINER', pageWidth - 160, 96)
+    doc.setDrawColor(13, 60, 164)
+    doc.setLineWidth(1)
+    doc.line(pageWidth - 160, 101, pageWidth - 108, 101)
+    doc.setFontSize(18)
+    doc.text(trainerName, pageWidth - 160, 122)
 
-    const statY = 170
+    const statY = 152
     const statWidth = (pageWidth - 80 - 36) / 4
     const statGap = 12
     const stats = [
@@ -311,7 +331,7 @@ export default function StudentCalendar() {
     doc.text('Student Summary', 40, 270)
 
     autoTable(doc, {
-      startY: 284,
+      startY: 268,
       head: [[
         'Student',
         'Mode',
@@ -319,8 +339,8 @@ export default function StudentCalendar() {
         'Present',
         'Absent',
         'Expected',
-        'Pending',
-        'Attendance',
+        'Payment Mode',
+        'Amount',
       ]],
       body: monthlySummary.map((student) => [
         student.name,
@@ -329,8 +349,8 @@ export default function StudentCalendar() {
         String(student.presentCount),
         String(student.absentCount),
         String(student.totalExpected),
-        String(student.scheduledCount),
-        `${student.pct}%`,
+        formatPaymentMode(student),
+        formatFeeAmount(student),
       ]),
       margin: { left: 40, right: 40 },
       headStyles: {
@@ -338,12 +358,12 @@ export default function StudentCalendar() {
         textColor: [255, 255, 255],
         lineColor: [13, 60, 164],
         lineWidth: 1,
-        fontSize: 9,
+        fontSize: 8,
         fontStyle: 'bold',
       },
       bodyStyles: {
         textColor: [15, 27, 76],
-        fontSize: 10,
+        fontSize: 9,
         lineColor: [226, 232, 240],
         lineWidth: 0.6,
       },
@@ -351,12 +371,19 @@ export default function StudentCalendar() {
         fillColor: [247, 250, 255],
       },
       styles: {
-        cellPadding: 8,
+        cellPadding: 6,
         valign: 'top',
         overflow: 'linebreak',
       },
       columnStyles: {
-        2: { cellWidth: 120 },
+        0: { cellWidth: 68 },
+        1: { cellWidth: 56 },
+        2: { cellWidth: 110 },
+        3: { cellWidth: 46 },
+        4: { cellWidth: 50 },
+        5: { cellWidth: 56 },
+        6: { cellWidth: 78 },
+        7: { cellWidth: 62 },
       },
     })
 

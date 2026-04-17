@@ -10,7 +10,7 @@ import {
   getModeBadgeLabel,
   normalizeSelectedDays,
 } from '../lib/studentSchedule'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Plus } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '../components/ui/dialog'
@@ -106,11 +106,18 @@ export default function BatchDetails() {
   const [existingStudentId, setExistingStudentId] = useState('')
   const [newStudentName, setNewStudentName] = useState('')
   const [newStudentMedicalHistory, setNewStudentMedicalHistory] = useState('')
+  const [paymentMode, setPaymentMode] = useState('cash')
+  const [feeAmount, setFeeAmount] = useState('')
   const [mode, setMode] = useState('weekly')
   const [selectedDays, setSelectedDays] = useState(WEEKLY_DAYS)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
+  const [editBatchOpen, setEditBatchOpen] = useState(false)
+  const [batchTitle, setBatchTitle] = useState('')
+  const [batchStartTime, setBatchStartTime] = useState('')
+  const [batchEndTime, setBatchEndTime] = useState('')
+  const [savingBatch, setSavingBatch] = useState(false)
 
   useEffect(() => {
     if (user && slotId) fetchData()
@@ -180,6 +187,8 @@ export default function BatchDetails() {
     setExistingStudentId('')
     setNewStudentName('')
     setNewStudentMedicalHistory('')
+    setPaymentMode('cash')
+    setFeeAmount('')
     setMode('weekly')
     setSelectedDays(WEEKLY_DAYS)
     setError('')
@@ -191,11 +200,23 @@ export default function BatchDetails() {
     setAddOpen(true)
   }
 
+  const openEditBatch = () => {
+    if (!batch) return
+    setBatchTitle(batch.title || '')
+    setBatchStartTime(batch.start_time || '')
+    setBatchEndTime(batch.end_time || '')
+    setError('')
+    setNotice('')
+    setEditBatchOpen(true)
+  }
+
   const openEditStudent = (student) => {
     setEditingStudent(student)
     setExistingStudentId('')
     setNewStudentName(student.name || '')
     setNewStudentMedicalHistory(student.medical_history || '')
+    setPaymentMode(student.payment_mode || 'cash')
+    setFeeAmount(student.fee_amount != null ? String(student.fee_amount) : '')
     setMode(student.mode === 'alternate' ? 'custom' : (student.mode || 'weekly'))
     setSelectedDays(
       normalizeSelectedDays(
@@ -227,6 +248,8 @@ export default function BatchDetails() {
 
     setNewStudentName('')
     setNewStudentMedicalHistory(student.medical_history || '')
+    setPaymentMode(student.payment_mode || 'cash')
+    setFeeAmount(student.fee_amount != null ? String(student.fee_amount) : '')
     setMode(student.mode === 'alternate' ? 'custom' : (student.mode || 'weekly'))
     setSelectedDays(
       normalizeSelectedDays(
@@ -252,6 +275,8 @@ export default function BatchDetails() {
     const studentPayload = {
       name: newStudentName.trim(),
       medical_history: newStudentMedicalHistory.trim() || null,
+      payment_mode: paymentMode || null,
+      fee_amount: feeAmount.trim() ? Number(feeAmount) : null,
       mode,
       selected_days: normalizedDays,
     }
@@ -313,6 +338,61 @@ export default function BatchDetails() {
     navigate('/profile')
   }
 
+  const handleSaveBatch = async (e) => {
+    e.preventDefault()
+    if (!batch) return
+
+    setSavingBatch(true)
+    setError('')
+
+    try {
+      const { error: updateError } = await supabase
+        .from('slots')
+        .update({
+          title: batchTitle.trim(),
+          start_time: batchStartTime,
+          end_time: batchEndTime || null,
+        })
+        .eq('id', batch.id)
+
+      if (updateError) throw updateError
+
+      setEditBatchOpen(false)
+      await fetchData()
+    } catch (updateBatchError) {
+      console.error('Failed to update batch', updateBatchError)
+      setError(updateBatchError.message || 'Could not update batch right now.')
+    } finally {
+      setSavingBatch(false)
+    }
+  }
+
+  const handleDeleteStudent = async () => {
+    if (!editingStudent) return
+    if (!window.confirm(`Delete ${editingStudent.name}? This will remove them from your students list too.`)) return
+
+    setSaving(true)
+    setError('')
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', editingStudent.id)
+
+      if (deleteError) throw deleteError
+
+      setAddOpen(false)
+      resetStudentForm()
+      await fetchData()
+    } catch (deleteStudentError) {
+      console.error('Failed to delete student', deleteStudentError)
+      setError(deleteStudentError.message || 'Could not delete student right now.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const formatTime = (time) => {
     if (!time) return ''
     const [h, m] = time.split(':')
@@ -360,19 +440,28 @@ export default function BatchDetails() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="font-heading text-xl font-bold text-ticksy-navy">Students</h2>
           <p className="font-body text-sm text-ticksy-navy/50">{students.length} enrolled</p>
         </div>
-        <button
-          data-testid="batch-add-student-btn"
-          onClick={openAddStudent}
-          className="ticksy-btn-primary flex items-center gap-2"
-        >
-          <Plus size={18} />
-          Add Student
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={openEditBatch}
+            className="shrink-0 rounded-full border border-ticksy-blue px-4 py-2 text-sm font-body font-semibold text-ticksy-blue hover:bg-blue-50 transition-colors"
+          >
+            Edit Batch
+          </button>
+          <button
+            data-testid="batch-add-student-btn"
+            onClick={openAddStudent}
+            className="ticksy-btn-primary flex items-center gap-2"
+          >
+            <Plus size={18} />
+            Add Student
+          </button>
+        </div>
       </div>
 
       {notice && (
@@ -481,6 +570,37 @@ export default function BatchDetails() {
                     placeholder="Optional notes, allergies, injuries, or any medical details"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Payment Mode</label>
+                    <div className="relative mt-1">
+                      <select
+                        value={paymentMode}
+                        onChange={(e) => setPaymentMode(e.target.value)}
+                        className="w-full appearance-none rounded-[18px] border-2 border-ticksy-blue/20 bg-[linear-gradient(135deg,#F7FBFF_0%,#EEF4FF_100%)] px-4 py-3 pr-10 text-sm font-body font-semibold text-ticksy-navy shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] outline-none transition-all focus:border-ticksy-blue focus:ring-2 focus:ring-ticksy-blue/15"
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="online">Online</option>
+                      </select>
+                      <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-ticksy-blue" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Amount</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="0.01"
+                      value={feeAmount}
+                      onChange={(e) => setFeeAmount(e.target.value)}
+                      className="ticksy-input mt-1"
+                      placeholder="2500"
+                    />
+                  </div>
+                </div>
               </>
             )}
 
@@ -530,6 +650,68 @@ export default function BatchDetails() {
 
             <button type="submit" disabled={saving} className="ticksy-btn-primary w-full">
               {saving ? 'Saving...' : 'Save'}
+            </button>
+
+            {editingStudent && (
+              <button
+                type="button"
+                onClick={handleDeleteStudent}
+                disabled={saving}
+                className="w-full py-2 text-sm font-body font-semibold text-red-500"
+              >
+                Delete Student
+              </button>
+            )}
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editBatchOpen} onOpenChange={setEditBatchOpen}>
+        <DialogContent className="rounded-[24px] border-2 border-ticksy-navy bg-white">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl text-ticksy-navy">Edit Batch</DialogTitle>
+            <DialogDescription className="font-body text-ticksy-navy/60">
+              Update the batch name and timing.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveBatch} className="space-y-4 mt-2">
+            <div>
+              <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Title</label>
+              <input
+                type="text"
+                value={batchTitle}
+                onChange={(e) => setBatchTitle(e.target.value)}
+                required
+                className="ticksy-input mt-1"
+                placeholder="Batch title"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Start</label>
+                <input
+                  type="time"
+                  value={batchStartTime}
+                  onChange={(e) => setBatchStartTime(e.target.value)}
+                  required
+                  className="ticksy-input mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">End</label>
+                <input
+                  type="time"
+                  value={batchEndTime}
+                  onChange={(e) => setBatchEndTime(e.target.value)}
+                  className="ticksy-input mt-1"
+                />
+              </div>
+            </div>
+
+            <button type="submit" disabled={savingBatch || !batchTitle.trim() || !batchStartTime} className="ticksy-btn-primary w-full">
+              {savingBatch ? 'Saving...' : 'Save Batch'}
             </button>
           </form>
         </DialogContent>

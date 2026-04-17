@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { DAYS } from '../lib/studentSchedule'
-import { LogOut, Mail, PencilLine, Plus, Users } from 'lucide-react'
+import { LogOut, Mail, PencilLine, Plus } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '../components/ui/dialog'
@@ -40,23 +40,41 @@ export default function Profile() {
 
   const fetchBatches = async () => {
     setLoadingBatches(true)
-    const { data } = await supabase.from('slots').select('*')
-      .eq('user_id', user.id)
-      .order('day_of_week')
-      .order('start_time')
+    try {
+      const { data, error } = await supabase.from('slots').select('*')
+        .eq('user_id', user.id)
+        .order('day_of_week')
+        .order('start_time')
 
-    setBatches(data || [])
+      if (error) throw error
 
-    const counts = {}
-    for (const batch of data || []) {
-      const { data: studentSlots } = await supabase
-        .from('student_slots')
-        .select('student_id')
-        .eq('slot_id', batch.id)
-      counts[batch.id] = (studentSlots || []).length
+      const nextBatches = data || []
+      setBatches(nextBatches)
+
+      const countResults = await Promise.all(
+        nextBatches.map(async (batch) => {
+          const { data: studentSlots, error: countError } = await supabase
+            .from('student_slots')
+            .select('student_id')
+            .eq('slot_id', batch.id)
+
+          if (countError) {
+            console.error(`Failed to load student count for batch ${batch.id}`, countError)
+            return [batch.id, 0]
+          }
+
+          return [batch.id, (studentSlots || []).length]
+        })
+      )
+
+      setBatchCounts(Object.fromEntries(countResults))
+    } catch (fetchError) {
+      console.error('Failed to load profile batches', fetchError)
+      setBatches([])
+      setBatchCounts({})
+    } finally {
+      setLoadingBatches(false)
     }
-    setBatchCounts(counts)
-    setLoadingBatches(false)
   }
 
   const handleCreateBatch = async (e) => {
@@ -190,18 +208,6 @@ export default function Profile() {
             ))}
           </div>
         )}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="font-heading text-xl font-bold text-ticksy-navy">Students</h2>
-        <button
-          data-testid="manage-students-btn"
-          onClick={() => navigate('/students')}
-          className="w-full ticksy-card flex items-center gap-3 !p-4 text-left hover:bg-white transition-colors"
-        >
-          <Users size={20} className="text-ticksy-blue" />
-          <span className="font-heading font-bold text-ticksy-navy text-sm">Manage Students</span>
-        </button>
       </section>
 
       <button

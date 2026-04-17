@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { createWorker } from 'tesseract.js'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useUI } from '../contexts/UIContext'
@@ -134,15 +133,15 @@ function WorkoutChecklistCard({ checklist, onToggleItem, onDeleteChecklist, onTo
         <div className="pointer-events-none absolute -left-8 top-6 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(91,142,255,0.32)_0%,rgba(91,142,255,0.08)_44%,transparent_76%)] blur-xl" />
         <div className="pointer-events-none absolute right-10 top-8 h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.66)_0%,rgba(255,255,255,0.14)_44%,transparent_76%)] blur-xl" />
         <div className="pointer-events-none absolute bottom-4 right-16 h-28 w-36 rounded-full bg-[radial-gradient(circle,rgba(247,201,223,0.26)_0%,rgba(247,201,223,0.08)_44%,transparent_76%)] blur-xl" />
-      <div className="flex items-start justify-between gap-4">
+      <div className="relative z-10 flex items-start justify-between gap-4">
         <div>
           <p className="font-heading text-lg font-bold text-ticksy-navy">
             {formatChecklistTitle(checklist)}
           </p>
-          <p className="font-body text-sm text-ticksy-navy/75 mt-1">
+          <p className="font-body text-sm text-ticksy-navy/85 mt-1">
             {completed}/{items.length} completed
           </p>
-          <p className="font-body text-xs text-ticksy-navy/45 mt-1">
+          <p className="font-body text-xs text-ticksy-navy/65 mt-1">
             Workout date: {formatDateLabel(checklist.workout_date || checklist.created_at?.split('T')[0])}
           </p>
         </div>
@@ -177,19 +176,19 @@ function WorkoutChecklistCard({ checklist, onToggleItem, onDeleteChecklist, onTo
         </div>
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="relative z-10 mt-4 space-y-2">
         {items.map((item, itemIndex) => (
           <button
             key={`${checklist.id}-${itemIndex}`}
             onClick={() => onToggleItem(checklist, itemIndex)}
-            className="w-full flex items-start gap-3 rounded-2xl bg-white/90 px-3 py-3 text-left hover:bg-white transition-colors"
+            className="relative z-10 w-full flex items-start gap-3 rounded-2xl bg-white/90 px-3 py-3 text-left hover:bg-white transition-colors"
           >
             <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${
               item.done ? 'border-ticksy-blue bg-ticksy-blue text-white' : 'border-ticksy-navy/25 bg-white'
             }`}>
               {item.done ? '✓' : ''}
             </div>
-            <span className={`font-body text-sm ${item.done ? 'text-ticksy-navy/45 line-through' : 'text-ticksy-navy'}`}>
+            <span className={`font-body text-sm ${item.done ? 'text-ticksy-navy/55 line-through' : 'text-ticksy-navy/95'}`}>
               {item.text}
             </span>
           </button>
@@ -285,6 +284,7 @@ export default function Dashboard() {
     setOcrError('')
 
     try {
+      const { createWorker } = await import('tesseract.js')
       const worker = await createWorker('eng')
       const { data } = await worker.recognize(file)
       await worker.terminate()

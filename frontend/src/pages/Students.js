@@ -11,7 +11,7 @@ import {
   formatSelectedDays,
   normalizeSelectedDays,
 } from '../lib/studentSchedule'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Plus } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '../components/ui/dialog'
@@ -104,6 +104,8 @@ export default function Students() {
   const [editingStudent, setEditingStudent] = useState(null)
   const [name, setName] = useState('')
   const [medicalHistory, setMedicalHistory] = useState('')
+  const [paymentMode, setPaymentMode] = useState('cash')
+  const [feeAmount, setFeeAmount] = useState('')
   const [mode, setMode] = useState('weekly')
   const [selectedDays, setSelectedDays] = useState(WEEKLY_DAYS)
   const [error, setError] = useState('')
@@ -181,6 +183,8 @@ export default function Students() {
   const resetForm = () => {
     setName('')
     setMedicalHistory('')
+    setPaymentMode('cash')
+    setFeeAmount('')
     setMode('weekly')
     setSelectedDays(WEEKLY_DAYS)
     setError('')
@@ -197,6 +201,8 @@ export default function Students() {
     setEditingStudent(student)
     setName(student.name)
     setMedicalHistory(student.medical_history || '')
+    setPaymentMode(student.payment_mode || 'cash')
+    setFeeAmount(student.fee_amount != null ? String(student.fee_amount) : '')
     setMode(student.mode === 'alternate' ? 'custom' : (student.mode || 'weekly'))
     setSelectedDays(
       normalizeSelectedDays(
@@ -234,6 +240,8 @@ export default function Students() {
     const payload = {
       name: name.trim(),
       medical_history: medicalHistory.trim() || null,
+      payment_mode: paymentMode || null,
+      fee_amount: feeAmount.trim() ? Number(feeAmount) : null,
       mode,
       selected_days: normalizedDays,
     }
@@ -412,6 +420,37 @@ export default function Students() {
                 className="ticksy-input mt-1 min-h-[96px] resize-none rounded-[24px] py-3"
                 placeholder="Optional notes, allergies, injuries, or anything important to remember"
               />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Payment Mode</label>
+                <div className="relative mt-1">
+                  <select
+                    value={paymentMode}
+                    onChange={(e) => setPaymentMode(e.target.value)}
+                    className="w-full appearance-none rounded-[18px] border-2 border-ticksy-blue/20 bg-[linear-gradient(135deg,#F7FBFF_0%,#EEF4FF_100%)] px-4 py-3 pr-10 text-sm font-body font-semibold text-ticksy-navy shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] outline-none transition-all focus:border-ticksy-blue focus:ring-2 focus:ring-ticksy-blue/15"
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="online">Online</option>
+                  </select>
+                  <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-ticksy-blue" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Amount</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={feeAmount}
+                  onChange={(e) => setFeeAmount(e.target.value)}
+                  className="ticksy-input mt-1"
+                  placeholder="2500"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
