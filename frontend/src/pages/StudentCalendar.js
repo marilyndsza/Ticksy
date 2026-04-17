@@ -257,17 +257,8 @@ export default function StudentCalendar() {
     if (student.fee_amount == null || student.fee_amount === '') return '—'
     const value = Number(student.fee_amount)
     if (Number.isNaN(value)) return '—'
-    return value.toLocaleString('en-IN', { maximumFractionDigits: value % 1 === 0 ? 0 : 2 })
-  }
-
-  const drawRupeeSymbol = (doc, x, y, size = 9) => {
-    doc.setDrawColor(15, 27, 76)
-    doc.setLineWidth(1)
-    doc.line(x, y, x + size * 0.72, y)
-    doc.line(x, y + size * 0.28, x + size * 0.62, y + size * 0.28)
-    doc.line(x + size * 0.14, y, x + size * 0.48, y + size * 0.5)
-    doc.line(x + size * 0.14, y + size * 0.28, x + size * 0.48, y + size * 0.5)
-    doc.line(x + size * 0.48, y + size * 0.5, x + size * 0.76, y + size * 0.92)
+    const formatted = value.toLocaleString('en-IN', { maximumFractionDigits: value % 1 === 0 ? 0 : 2 })
+    return `Rs. ${formatted}`
   }
 
   const downloadMonthlyAttendance = () => {
@@ -394,24 +385,6 @@ export default function StudentCalendar() {
         5: { cellWidth: 56 },
         6: { cellWidth: 78 },
         7: { cellWidth: 62 },
-      },
-      didParseCell: (data) => {
-        if (data.section !== 'body' || data.column.index !== 7) return
-        const cellValue = String(data.cell.raw || '').trim()
-        if (!cellValue || cellValue === '—') return
-        data.cell.styles.cellPadding = { top: 6, right: 6, bottom: 6, left: 18 }
-      },
-      didDrawCell: (data) => {
-        if (data.section !== 'body' || data.column.index !== 7) return
-        const cellValue = String(data.cell.raw || '').trim()
-        if (!cellValue || cellValue === '—') return
-
-        drawRupeeSymbol(
-          doc,
-          data.cell.x + 8,
-          data.cell.y + 17,
-          8
-        )
       },
     })
 
