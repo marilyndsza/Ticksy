@@ -257,7 +257,7 @@ export default function StudentCalendar() {
     if (student.fee_amount == null || student.fee_amount === '') return '—'
     const value = Number(student.fee_amount)
     if (Number.isNaN(value)) return '—'
-    return `Rs ${value.toLocaleString('en-IN', { maximumFractionDigits: value % 1 === 0 ? 0 : 2 })}`
+    return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: value % 1 === 0 ? 0 : 2 })}`
   }
 
   const downloadMonthlyAttendance = () => {
@@ -328,10 +328,10 @@ export default function StudentCalendar() {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(15)
     doc.setTextColor(15, 27, 76)
-    doc.text('Student Summary', 40, 270)
+    doc.text('Student Summary', 40, 238)
 
     autoTable(doc, {
-      startY: 268,
+      startY: 246,
       head: [[
         'Student',
         'Mode',
