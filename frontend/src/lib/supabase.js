@@ -138,6 +138,8 @@ const createSeedData = () => {
         checklist_items: [],
         keep_forever: false,
         workout_date: null,
+        is_pinned: true,
+        board_order: 0,
         created_at: threeDaysAgo.toISOString(),
       },
       {
@@ -148,6 +150,8 @@ const createSeedData = () => {
         checklist_items: [],
         keep_forever: false,
         workout_date: null,
+        is_pinned: false,
+        board_order: 1,
         created_at: now.toISOString(),
       },
     ],
@@ -177,6 +181,8 @@ const migrateLocalDb = (db) => ({
     checklist_items: Array.isArray(note.checklist_items) ? note.checklist_items : [],
     keep_forever: note.keep_forever ?? false,
     workout_date: note.workout_date || null,
+    is_pinned: note.is_pinned ?? false,
+    board_order: Number.isInteger(note.board_order) ? note.board_order : 0,
   })),
 })
 
