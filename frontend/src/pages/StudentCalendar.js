@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Calendar } from '../components/ui/calendar'
-import { DAYS, DAYS_SHORT, getModeBadgeLabel, getStudentSelectedDays, formatSelectedDays } from '../lib/studentSchedule'
+import { DAYS_SHORT, getModeBadgeLabel, getStudentSelectedDays, formatSelectedDays } from '../lib/studentSchedule'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { CalendarDays, ChevronDown, Download, UserRound } from 'lucide-react'
@@ -37,6 +37,8 @@ export default function StudentCalendar() {
   const [dayError, setDayError] = useState('')
   const [holidays, setHolidays] = useState([])
   const [holidaysAvailable, setHolidaysAvailable] = useState(true)
+  const [makeupSessions, setMakeupSessions] = useState([])
+  const [makeupSessionsAvailable, setMakeupSessionsAvailable] = useState(true)
 
   // Monthly summary for all students in batch
   const [allBatchAttendance, setAllBatchAttendance] = useState([])
@@ -46,6 +48,7 @@ export default function StudentCalendar() {
   useEffect(() => { if (selectedStudentId && selectedBatchId) fetchAttendance() }, [selectedStudentId, selectedBatchId, month]) // eslint-disable-line
   useEffect(() => { if (selectedBatchId && batchStudents.length > 0) fetchAllBatchAttendance() }, [selectedBatchId, batchStudents, month]) // eslint-disable-line
   useEffect(() => { if (selectedBatchId) fetchHolidays() }, [selectedBatchId, month]) // eslint-disable-line
+  useEffect(() => { if (selectedBatchId) fetchMakeupSessions() }, [selectedBatchId, month]) // eslint-disable-line
 
   const fetchBatches = async () => {
     const { data } = await supabase.from('slots').select('*')
@@ -57,7 +60,7 @@ export default function StudentCalendar() {
 
   const fetchBatchStudents = async () => {
     const { data } = await supabase.from('student_slots')
-      .select('student_id, students(id, name, mode, selected_days, alternate_days, payment_mode, fee_amount, is_active)')
+      .select('student_id, students(*)')
       .eq('slot_id', selectedBatchId)
     const list = (data || [])
       .map(s => s.students)
@@ -114,6 +117,29 @@ export default function StudentCalendar() {
     }
   }
 
+  const fetchMakeupSessions = async () => {
+    const { start, end } = getMonthRange()
+
+    try {
+      const { data, error } = await supabase
+        .from('batch_makeup_sessions')
+        .select('session_date')
+        .eq('slot_id', selectedBatchId)
+        .gte('session_date', start)
+        .lte('session_date', end)
+
+      if (error) throw error
+      setMakeupSessionsAvailable(true)
+      setMakeupSessions((data || []).map((entry) => entry.session_date))
+    } catch (error) {
+      console.error('Failed to load batch makeup sessions', error)
+      if ((error.message || '').includes('public.batch_makeup_sessions')) {
+        setMakeupSessionsAvailable(false)
+      }
+      setMakeupSessions([])
+    }
+  }
+
   const getMonthRange = () => {
     const y = month.getFullYear(), m = month.getMonth()
     const start = `${y}-${String(m + 1).padStart(2, '0')}-01`
@@ -128,13 +154,15 @@ export default function StudentCalendar() {
   const fullMonthLabel = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
   const holidaySet = useMemo(() => new Set(holidays), [holidays])
+  const makeupSessionSet = useMemo(() => new Set(makeupSessions), [makeupSessions])
   const selectedDateKey = selectedDate ? formatDateKey(selectedDate) : ''
   const selectedDateStatus = selectedDateKey
     ? attendanceData.find((entry) => entry.attendance_date === selectedDateKey)?.status || null
     : null
   const selectedDateIsHoliday = selectedDateKey ? holidaySet.has(selectedDateKey) : false
+  const selectedDateIsMakeupSession = selectedDateKey ? makeupSessionSet.has(selectedDateKey) : false
   const selectedDateIsExpected = selectedDate && selectedStudent
-    ? getStudentSelectedDays(selectedStudent).includes(selectedDate.getDay())
+    ? (getStudentSelectedDays(selectedStudent).includes(selectedDate.getDay()) && !selectedDateIsHoliday) || selectedDateIsMakeupSession
     : false
 
   // Build scheduled dates for the selected student
@@ -160,17 +188,17 @@ export default function StudentCalendar() {
       const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
       const dt = new Date(y, m, d)
       const status = attendMap[dateStr]
-      const isExpected = selectedDays.includes(dt.getDay())
       const isHoliday = holidaySet.has(dateStr)
+      const isExpected = (selectedDays.includes(dt.getDay()) && !isHoliday) || makeupSessionSet.has(dateStr)
 
-      if (isHoliday) continue
+      if (isHoliday && !makeupSessionSet.has(dateStr)) continue
       if (status === 'present') present.push(dt)
       else if (status === 'absent') absent.push(dt)
       else if (isExpected) scheduled.push(dt)
     }
 
     return { presentDates: present, absentDates: absent, scheduledDates: scheduled }
-  }, [selectedBatch, selectedStudent, month, attendanceData, holidaySet])
+  }, [selectedBatch, selectedStudent, month, attendanceData, holidaySet, makeupSessionSet])
 
   // Monthly summary calculation
   const monthlySummary = useMemo(() => {
@@ -179,6 +207,7 @@ export default function StudentCalendar() {
     const lastDay = new Date(y, m + 1, 0).getDate()
 
     return batchStudents.map(student => {
+      const studentSelectedDays = getStudentSelectedDays(student)
       const studentAttendance = allBatchAttendance
         .filter(a => a.student_id === student.id)
         .filter(a => !holidaySet.has(a.attendance_date))
@@ -188,18 +217,24 @@ export default function StudentCalendar() {
       })
       const presentCount = studentAttendance.filter(a => a.status === 'present').length
       const absentCount = studentAttendance.filter(a => a.status === 'absent').length
-      const adjustedTotal = Math.max(daysInMonth - holidays.length, 0)
+      let adjustedTotal = 0
       const dailyStatuses = []
       for (let d = 1; d <= lastDay; d++) {
         const dt = new Date(y, m, d)
         const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+        const isHoliday = holidaySet.has(dateStr)
+        const isExpected = (studentSelectedDays.includes(dt.getDay()) && !isHoliday) || makeupSessionSet.has(dateStr)
+        if (isExpected) adjustedTotal += 1
         dailyStatuses.push({
           day: d,
           date: dateStr,
-          status: holidaySet.has(dateStr) ? 'holiday' : (attendanceMap[dateStr] || 'scheduled'),
+          status: isHoliday && !makeupSessionSet.has(dateStr)
+            ? 'holiday'
+            : (attendanceMap[dateStr] || (isExpected ? 'scheduled' : 'off')),
         })
       }
       const pct = adjustedTotal > 0 ? Math.round((presentCount / adjustedTotal) * 100) : 0
+      const absentPct = adjustedTotal > 0 ? Math.round((absentCount / adjustedTotal) * 100) : 0
       return {
         ...student,
         presentCount,
@@ -207,37 +242,47 @@ export default function StudentCalendar() {
         totalExpected: adjustedTotal,
         scheduledCount: Math.max(adjustedTotal - presentCount - absentCount, 0),
         pct: Math.min(pct, 100),
+        absentPct: Math.min(absentPct, 100),
         dailyStatuses,
       }
     })
-  }, [batchStudents, allBatchAttendance, month, daysInMonth, holidays.length, holidaySet])
+  }, [batchStudents, allBatchAttendance, month, holidaySet, makeupSessionSet])
 
   const overviewStats = useMemo(() => {
     const totals = monthlySummary.reduce((acc, student) => ({
       students: acc.students + 1,
-      present: acc.present + student.presentCount,
-      absent: acc.absent + student.absentCount,
-    }), { students: 0, present: 0, absent: 0 })
+      presentPctTotal: acc.presentPctTotal + student.pct,
+      absentPctTotal: acc.absentPctTotal + student.absentPct,
+    }), { students: 0, presentPctTotal: 0, absentPctTotal: 0 })
 
-    const expectedSessions = Math.max(daysInMonth - holidays.length, 0)
-    const totalOpportunities = totals.students * expectedSessions
-    const presentPct = totalOpportunities > 0 ? Math.round((totals.present / totalOpportunities) * 100) : 0
-    const absentPct = totalOpportunities > 0 ? Math.round((totals.absent / totalOpportunities) * 100) : 0
+    const presentPct = totals.students > 0 ? Math.round(totals.presentPctTotal / totals.students) : 0
+    const absentPct = totals.students > 0 ? Math.round(totals.absentPctTotal / totals.students) : 0
+    const expectedSessions = monthlySummary.reduce(
+      (max, student) => Math.max(max, student.totalExpected || 0),
+      0
+    )
 
     return {
-      ...totals,
+      students: totals.students,
       scheduled: expectedSessions,
-      totalOpportunities,
       presentPct,
       absentPct,
       holidays: holidays.length,
     }
-  }, [monthlySummary, daysInMonth, holidays.length])
+  }, [monthlySummary, holidays.length])
 
   const formatReportDays = (student) => {
     const days = getStudentSelectedDays(student)
     if (days.length === 0) return 'No scheduled days'
-    return days.map((day) => DAYS[day]).join(', ')
+    const reportLabels = ['Sun', 'M', 'T', 'W', 'Th', 'F', 'Sat']
+    return days.map((day) => reportLabels[day]).join(', ')
+  }
+
+  const formatJoinedDate = (student) => {
+    if (!student.date_joined) return '—'
+    const [year, month, day] = String(student.date_joined).split('-')
+    if (!year || !month || !day) return '—'
+    return `${day}/${month}/${year}`
   }
 
   const formatReportDates = (entries, status) => {
@@ -329,22 +374,24 @@ export default function StudentCalendar() {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(15)
     doc.setTextColor(15, 27, 76)
-    doc.text('Student Summary', 40, 238)
+    doc.text('Student Summary', 28, 238)
 
     autoTable(doc, {
       startY: 246,
       head: [[
         'Student',
+        'Joined',
         'Mode',
         'Scheduled Days',
         'Present',
         'Absent',
         'Expected',
-        'Payment Mode',
+        'Pay Mode',
         'Amount',
       ]],
       body: monthlySummary.map((student) => [
         student.name,
+        formatJoinedDate(student),
         student.mode === 'custom' ? 'Custom' : 'Weekly',
         formatReportDays(student),
         String(student.presentCount),
@@ -353,18 +400,19 @@ export default function StudentCalendar() {
         formatPaymentMode(student),
         formatFeeAmount(student),
       ]),
-      margin: { left: 40, right: 40 },
+      margin: { left: 28, right: 24 },
       headStyles: {
         fillColor: [13, 60, 164],
         textColor: [255, 255, 255],
         lineColor: [13, 60, 164],
         lineWidth: 1,
-        fontSize: 8,
+        fontSize: 7.5,
         fontStyle: 'bold',
+        valign: 'middle',
       },
       bodyStyles: {
         textColor: [15, 27, 76],
-        fontSize: 9,
+        fontSize: 8.5,
         lineColor: [226, 232, 240],
         lineWidth: 0.6,
       },
@@ -372,19 +420,20 @@ export default function StudentCalendar() {
         fillColor: [247, 250, 255],
       },
       styles: {
-        cellPadding: 6,
+        cellPadding: 5,
         valign: 'top',
         overflow: 'linebreak',
       },
       columnStyles: {
-        0: { cellWidth: 68 },
-        1: { cellWidth: 56 },
-        2: { cellWidth: 110 },
-        3: { cellWidth: 46 },
-        4: { cellWidth: 50 },
-        5: { cellWidth: 56 },
-        6: { cellWidth: 78 },
-        7: { cellWidth: 62 },
+        0: { cellWidth: 64 },
+        1: { cellWidth: 54 },
+        2: { cellWidth: 42 },
+        3: { cellWidth: 104 },
+        4: { cellWidth: 40 },
+        5: { cellWidth: 40 },
+        6: { cellWidth: 46 },
+        7: { cellWidth: 58 },
+        8: { cellWidth: 56 },
       },
     })
 
@@ -428,6 +477,7 @@ export default function StudentCalendar() {
       await fetchAttendance()
       await fetchAllBatchAttendance()
       await fetchHolidays()
+      await fetchMakeupSessions()
     } catch (error) {
       console.error('Failed to mark specific attendance date', error)
       setDayError(error.message || 'Could not update attendance for that day.')
@@ -479,9 +529,54 @@ export default function StudentCalendar() {
       await fetchAttendance()
       await fetchAllBatchAttendance()
       await fetchHolidays()
+      await fetchMakeupSessions()
     } catch (error) {
       console.error('Failed to update holiday', error)
       setDayError(error.message || 'Could not update holiday for that day.')
+    } finally {
+      setSavingDay(false)
+    }
+  }
+
+  const toggleMakeupSession = async () => {
+    if (!selectedDate || !selectedBatch || !user) return
+
+    setSavingDay(true)
+    setDayError('')
+
+    try {
+      if (!makeupSessionsAvailable) {
+        setDayError('Rescheduling is unavailable until the batch_makeup_sessions table is added in Supabase.')
+        return
+      }
+
+      if (selectedDateIsMakeupSession) {
+        const { error } = await supabase
+          .from('batch_makeup_sessions')
+          .delete()
+          .eq('slot_id', selectedBatch.id)
+          .eq('session_date', selectedDateKey)
+
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('batch_makeup_sessions')
+          .upsert({
+            slot_id: selectedBatch.id,
+            session_date: selectedDateKey,
+            user_id: user.id,
+          }, { onConflict: 'slot_id,session_date' })
+
+        if (error) throw error
+      }
+
+      await fetchAttendance()
+      await fetchAllBatchAttendance()
+      await fetchHolidays()
+      await fetchMakeupSessions()
+    } catch (error) {
+      console.error('Failed to update rescheduled session', error)
+      setDayError(error.message || 'Could not update scheduled class for that day.')
     } finally {
       setSavingDay(false)
     }
@@ -645,8 +740,20 @@ export default function StudentCalendar() {
               selected={selectedDate}
               onSelect={setSelectedDate}
               onMonthChange={setMonth}
-              modifiers={{ present: presentDates, absent: absentDates, scheduled: scheduledDates, holiday: holidays.map((date) => new Date(`${date}T00:00:00`)) }}
-              modifiersClassNames={{ present: 'calendar-present', absent: 'calendar-absent', scheduled: 'calendar-scheduled', holiday: 'calendar-holiday' }}
+              modifiers={{
+                present: presentDates,
+                absent: absentDates,
+                scheduled: scheduledDates,
+                holiday: holidays.map((date) => new Date(`${date}T00:00:00`)),
+                makeup: makeupSessions.map((date) => new Date(`${date}T00:00:00`)),
+              }}
+              modifiersClassNames={{
+                present: 'calendar-present',
+                absent: 'calendar-absent',
+                scheduled: 'calendar-scheduled',
+                holiday: 'calendar-holiday',
+                makeup: 'calendar-makeup',
+              }}
               className="w-full max-w-[330px] p-1 font-body sm:max-w-[390px] sm:p-3"
               classNames={{
                 month: 'w-full space-y-5',
@@ -683,6 +790,8 @@ export default function StudentCalendar() {
                 <span className={`rounded-full px-3 py-1 text-xs font-body font-semibold ${
                   selectedDateIsHoliday
                     ? 'bg-amber-100 text-amber-700'
+                    : selectedDateIsMakeupSession
+                    ? 'bg-violet-100 text-violet-700'
                     : selectedDateStatus === 'present'
                     ? 'bg-green-100 text-green-700'
                     : selectedDateStatus === 'absent'
@@ -691,13 +800,25 @@ export default function StudentCalendar() {
                     ? 'bg-blue-100 text-blue-700'
                     : 'bg-slate-100 text-slate-600'
                 }`}>
-                  {selectedDateIsHoliday ? 'Holiday' : selectedDateStatus ? selectedDateStatus[0].toUpperCase() + selectedDateStatus.slice(1) : selectedDateIsExpected ? 'Scheduled' : 'No mark'}
+                  {selectedDateIsHoliday
+                    ? 'Holiday'
+                    : selectedDateIsMakeupSession
+                    ? 'Rescheduled'
+                    : selectedDateStatus
+                    ? selectedDateStatus[0].toUpperCase() + selectedDateStatus.slice(1)
+                    : selectedDateIsExpected
+                    ? 'Scheduled'
+                    : 'No mark'}
                 </span>
               </div>
 
               {selectedDateIsHoliday ? (
                 <p className="font-body text-xs text-amber-700">
                   This date is marked as a batch holiday and is excluded from monthly expected sessions.
+                </p>
+              ) : selectedDateIsMakeupSession ? (
+                <p className="font-body text-xs text-violet-700">
+                  This date is marked as a rescheduled class and is added back into monthly expected sessions.
                 </p>
               ) : !holidaysAvailable ? (
                 <p className="font-body text-xs text-amber-700">
@@ -721,6 +842,14 @@ export default function StudentCalendar() {
                   className="rounded-full bg-amber-500 px-4 py-2 text-sm font-body font-semibold text-white disabled:opacity-50"
                 >
                   {savingDay ? 'Saving...' : selectedDateIsHoliday ? 'Remove Holiday' : 'Mark Holiday'}
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleMakeupSession}
+                  disabled={savingDay || !makeupSessionsAvailable || selectedDateIsHoliday}
+                  className="rounded-full bg-violet-500 px-4 py-2 text-sm font-body font-semibold text-white disabled:opacity-50"
+                >
+                  {savingDay ? 'Saving...' : selectedDateIsMakeupSession ? 'Remove Schedule' : 'Schedule Class'}
                 </button>
                 <button
                   type="button"
@@ -763,6 +892,10 @@ export default function StudentCalendar() {
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-blue-300" />
               <span className="font-body text-xs text-ticksy-navy/70">Scheduled</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-violet-400" />
+              <span className="font-body text-xs text-ticksy-navy/70">Rescheduled</span>
             </div>
           </div>
 

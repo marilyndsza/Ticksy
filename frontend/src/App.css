@@ -58,6 +58,14 @@ td:has(.calendar-holiday) {
   font-weight: 700 !important;
 }
 
+.calendar-makeup,
+td:has(.calendar-makeup) {
+  background-color: #c4b5fd !important;
+  color: #5b21b6 !important;
+  border-radius: 9999px !important;
+  font-weight: 700 !important;
+}
+
 /* Delay utilities for sparkle animations */
 .delay-200 { animation-delay: 200ms; }
 .delay-500 { animation-delay: 500ms; }

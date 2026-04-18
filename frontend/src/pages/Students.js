@@ -93,6 +93,13 @@ function DaySelector({ value, onChange }) {
   )
 }
 
+const formatDisplayDate = (value) => {
+  if (!value) return ''
+  const [year, month, day] = String(value).split('-')
+  if (!year || !month || !day) return ''
+  return `${day}/${month}/${year}`
+}
+
 export default function Students() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -104,6 +111,8 @@ export default function Students() {
   const [editingStudent, setEditingStudent] = useState(null)
   const [name, setName] = useState('')
   const [medicalHistory, setMedicalHistory] = useState('')
+  const [dateJoined, setDateJoined] = useState('')
+  const [age, setAge] = useState('')
   const [paymentMode, setPaymentMode] = useState('cash')
   const [feeAmount, setFeeAmount] = useState('')
   const [mode, setMode] = useState('weekly')
@@ -183,6 +192,8 @@ export default function Students() {
   const resetForm = () => {
     setName('')
     setMedicalHistory('')
+    setDateJoined('')
+    setAge('')
     setPaymentMode('cash')
     setFeeAmount('')
     setMode('weekly')
@@ -201,6 +212,8 @@ export default function Students() {
     setEditingStudent(student)
     setName(student.name)
     setMedicalHistory(student.medical_history || '')
+    setDateJoined(student.date_joined || '')
+    setAge(student.age != null ? String(student.age) : '')
     setPaymentMode(student.payment_mode || 'cash')
     setFeeAmount(student.fee_amount != null ? String(student.fee_amount) : '')
     setMode(student.mode === 'alternate' ? 'custom' : (student.mode || 'weekly'))
@@ -240,6 +253,8 @@ export default function Students() {
     const payload = {
       name: name.trim(),
       medical_history: medicalHistory.trim() || null,
+      date_joined: dateJoined || null,
+      age: age.trim() ? Number(age) : null,
       payment_mode: paymentMode || null,
       fee_amount: feeAmount.trim() ? Number(feeAmount) : null,
       mode,
@@ -378,6 +393,18 @@ export default function Students() {
                         Medical: {student.medical_history}
                       </p>
                     )}
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                      {student.age != null && (
+                        <p className="font-body text-xs text-ticksy-navy/50">
+                          Age: {student.age}
+                        </p>
+                      )}
+                      {student.date_joined && (
+                        <p className="font-body text-xs text-ticksy-navy/50">
+                          Joined: {formatDisplayDate(student.date_joined)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -387,7 +414,7 @@ export default function Students() {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="rounded-[24px] border-2 border-ticksy-navy bg-white">
+        <DialogContent className="max-h-[88vh] overflow-y-auto rounded-[24px] border-2 border-ticksy-navy bg-white p-5 sm:p-6">
           <DialogHeader>
             <DialogTitle className="font-heading text-xl text-ticksy-navy">
               {editingStudent ? 'Edit Student' : 'Add Student'}
@@ -397,7 +424,7 @@ export default function Students() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSave} className="space-y-4 mt-2">
+          <form onSubmit={handleSave} className="mt-2 space-y-4 pb-2">
             <div>
               <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Name</label>
               <input
@@ -420,6 +447,33 @@ export default function Students() {
                 className="ticksy-input mt-1 min-h-[96px] resize-none rounded-[24px] py-3"
                 placeholder="Optional notes, allergies, injuries, or anything important to remember"
               />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Date Joined</label>
+                <input
+                  type="date"
+                  value={dateJoined}
+                  onChange={(e) => setDateJoined(e.target.value)}
+                  className="ticksy-input mt-1"
+                  placeholder="dd/mm/yyyy"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Age</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="ticksy-input mt-1"
+                  placeholder="45"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
