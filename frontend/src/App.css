@@ -66,6 +66,37 @@ td:has(.calendar-makeup) {
   font-weight: 700 !important;
 }
 
+.birthday-confetti-piece {
+  position: absolute;
+  border-radius: 9999px;
+  opacity: 0.82;
+  transform-origin: center;
+  animation: birthday-confetti-fall 3.2s linear infinite;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.18);
+}
+
+.birthday-confetti-delay-0 { animation-delay: 0s; }
+.birthday-confetti-delay-1 { animation-delay: 0.18s; }
+.birthday-confetti-delay-2 { animation-delay: 0.35s; }
+.birthday-confetti-delay-3 { animation-delay: 0.52s; }
+.birthday-confetti-delay-4 { animation-delay: 0.7s; }
+.birthday-confetti-delay-5 { animation-delay: 0.88s; }
+.birthday-confetti-delay-6 { animation-delay: 1.05s; }
+
+@keyframes birthday-confetti-fall {
+  0% {
+    transform: translateY(-8px) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.82;
+  }
+  100% {
+    transform: translateY(92px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
 /* Delay utilities for sparkle animations */
 .delay-200 { animation-delay: 200ms; }
 .delay-500 { animation-delay: 500ms; }

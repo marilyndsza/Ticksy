@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useUI } from '../contexts/UIContext'
@@ -11,6 +11,21 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const BULLET_PATTERN = /^[•●○◦▪■◆◇★☆*·●®]/u
 const DATE_PATTERN = /(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/
 const CONTINUATION_CONNECTOR_PATTERN = /\b(with|and|or|to|for|of|in|on|into|from|using)$/i
+const BIRTHDAY_CONFETTI_COLORS = ['#FF6BAA', '#FFD166', '#7ED6A5', '#7BA8FF', '#FF9F1C', '#B28DFF']
+const BIRTHDAY_CONFETTI_LAYOUT = [
+  { left: '7%', top: '18%', delay: 0, size: 8, rotate: '-18deg' },
+  { left: '12%', top: '9%', delay: 1, size: 10, rotate: '24deg' },
+  { left: '19%', top: '20%', delay: 2, size: 9, rotate: '-8deg' },
+  { left: '27%', top: '11%', delay: 3, size: 8, rotate: '12deg' },
+  { left: '36%', top: '18%', delay: 4, size: 10, rotate: '-24deg' },
+  { left: '50%', top: '15%', delay: 2, size: 9, rotate: '6deg' },
+  { left: '58%', top: '7%', delay: 5, size: 8, rotate: '-16deg' },
+  { left: '66%', top: '18%', delay: 1, size: 9, rotate: '18deg' },
+  { left: '74%', top: '10%', delay: 6, size: 11, rotate: '-6deg' },
+  { left: '82%', top: '17%', delay: 3, size: 8, rotate: '20deg' },
+  { left: '89%', top: '8%', delay: 4, size: 9, rotate: '-12deg' },
+  { left: '94%', top: '12%', delay: 4, size: 7, rotate: '8deg' },
+]
 
 const toIsoDate = (day, month, year) => {
   const normalizedYear = year.length === 2 ? `20${year}` : year
@@ -117,7 +132,7 @@ const formatDateLabel = (value) => {
 const formatChecklistTitle = (checklist) =>
   checklist.title || formatDateLabel(checklist.workout_date || checklist.created_at?.split('T')[0])
 
-function WorkoutChecklistCard({ checklist, onToggleItem, onDeleteChecklist, onToggleKeep, onReviewChecklist }) {
+const WorkoutChecklistCard = memo(function WorkoutChecklistCard({ checklist, onToggleItem, onDeleteChecklist, onToggleKeep, onReviewChecklist }) {
   const items = Array.isArray(checklist.checklist_items) ? checklist.checklist_items : []
   const completed = items.filter((item) => item.done).length
 
@@ -197,7 +212,7 @@ function WorkoutChecklistCard({ checklist, onToggleItem, onDeleteChecklist, onTo
       </div>
     </div>
   )
-}
+})
 
 export default function Dashboard() {
   const { user, getDisplayName } = useAuth()
@@ -245,17 +260,33 @@ export default function Dashboard() {
 
     if (!error && slots) {
       setTodaySlots(slots)
-      const counts = {}
-      for (const slot of slots) {
-        const { data: studentSlots } = await supabase
-          .from('student_slots')
-          .select('student_id, students(id)')
-          .eq('slot_id', slot.id)
-        counts[slot.id] = (studentSlots || [])
-          .map((entry) => entry.students)
-          .filter(Boolean)
-          .filter((student) => attendsOnDay(student, slot.day_of_week)).length
+
+      if (slots.length === 0) {
+        setStudentCounts({})
+        setLoading(false)
+        return
       }
+
+      const slotIds = slots.map((slot) => slot.id)
+      const dayBySlotId = Object.fromEntries(slots.map((slot) => [slot.id, slot.day_of_week]))
+      const { data: studentSlots } = await supabase
+        .from('student_slots')
+        .select('slot_id, students(id, mode, selected_days, alternate_days)')
+        .in('slot_id', slotIds)
+
+      const counts = {}
+      slotIds.forEach((slotId) => {
+        counts[slotId] = 0
+      })
+
+      ;(studentSlots || []).forEach((entry) => {
+        const student = entry.students
+        const slotDay = dayBySlotId[entry.slot_id]
+        if (student && attendsOnDay(student, slotDay)) {
+          counts[entry.slot_id] = (counts[entry.slot_id] || 0) + 1
+        }
+      })
+
       setStudentCounts(counts)
     }
     setLoading(false)
@@ -365,7 +396,7 @@ export default function Dashboard() {
     await extractWorkoutImage(file)
   }
 
-  const handleCreateChecklist = async () => {
+  const handleCreateChecklist = useCallback(async () => {
     const items = parseChecklistLines(checklistText).map((text) => ({ text, done: false }))
     if (items.length === 0) return
 
@@ -401,10 +432,9 @@ export default function Dashboard() {
 
     setShowUpload(false)
     resetChecklistComposer()
-    fetchChecklists()
-  }
+  }, [checklistText, checklistTitle, user, workoutDate])
 
-  const handleToggleChecklistItem = async (checklist, itemIndex) => {
+  const handleToggleChecklistItem = useCallback(async (checklist, itemIndex) => {
     const nextItems = (checklist.checklist_items || []).map((item, index) =>
       index === itemIndex ? { ...item, done: !item.done } : item
     )
@@ -420,15 +450,15 @@ export default function Dashboard() {
     if (reviewChecklist?.id === checklist.id) {
       setReviewChecklist((prev) => prev ? { ...prev, checklist_items: nextItems } : prev)
     }
-  }
+  }, [reviewChecklist?.id])
 
-  const handleDeleteChecklist = async (id) => {
+  const handleDeleteChecklist = useCallback(async (id) => {
     await supabase.from('notes').delete().eq('id', id)
     setChecklists((prev) => prev.filter((entry) => entry.id !== id))
     if (reviewChecklist?.id === id) setReviewChecklist(null)
-  }
+  }, [reviewChecklist?.id])
 
-  const handleToggleKeepChecklist = async (checklist) => {
+  const handleToggleKeepChecklist = useCallback(async (checklist) => {
     const nextKeep = !checklist.keep_forever
     await supabase
       .from('notes')
@@ -441,7 +471,7 @@ export default function Dashboard() {
     if (reviewChecklist?.id === checklist.id) {
       setReviewChecklist((prev) => prev ? { ...prev, keep_forever: nextKeep } : prev)
     }
-  }
+  }, [reviewChecklist?.id])
 
   const handleReviewItemTextChange = (itemIndex, value) => {
     setReviewChecklist((prev) => {
@@ -515,6 +545,23 @@ export default function Dashboard() {
       month: 'short',
       day: 'numeric',
     })
+  }
+
+  const isBirthdayToday = (birthday) => {
+    if (!birthday) return false
+    const [year, month, day] = String(birthday).split('-').map(Number)
+    if (!year || !month || !day) return false
+    return today.getMonth() + 1 === month && today.getDate() === day
+  }
+
+  const getTurnsAgeLabel = (birthday) => {
+    if (!birthday) return ''
+    const [year, month, day] = String(birthday).split('-').map(Number)
+    if (!year || !month || !day) return ''
+
+    const thisYearBirthday = new Date(today.getFullYear(), month - 1, day)
+    const turnsAge = thisYearBirthday.getFullYear() - year
+    return turnsAge > 0 ? `Turns ${turnsAge} !` : ''
   }
 
   return (
@@ -627,8 +674,8 @@ export default function Dashboard() {
 
       <section className="space-y-4">
         <div className="flex items-baseline gap-2">
-          <h2 className="font-heading text-xl font-bold text-ticksy-navy">Upcoming Birthdays</h2>
-          <p className="font-body text-sm text-ticksy-navy/55">- This month</p>
+          <h2 className="font-heading text-xl font-bold text-ticksy-navy">Upcoming Birthdays 🎉</h2>
+          <p className="font-body text-sm text-ticksy-navy/55">- this month</p>
         </div>
 
         {upcomingBirthdays.length === 0 ? (
@@ -646,17 +693,35 @@ export default function Dashboard() {
                 className="relative overflow-hidden rounded-[24px] border border-[#F5C6DD] bg-[linear-gradient(135deg,#FFF7FB_0%,#FFF1F7_52%,#F5F6FF_100%)] p-5 shadow-[0_10px_24px_rgba(15,27,76,0.08)]"
               >
                 <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[radial-gradient(circle,rgba(255,191,219,0.5)_0%,rgba(255,191,219,0.08)_58%,transparent_78%)]" />
-                <div className="pointer-events-none absolute bottom-0 left-0 h-16 w-24 rounded-full bg-[radial-gradient(circle,rgba(180,203,255,0.42)_0%,rgba(180,203,255,0.1)_54%,transparent_78%)]" />
-                <div className="relative flex items-center justify-between gap-3">
+                {isBirthdayToday(student.birthday) && (
+                  <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+                    {BIRTHDAY_CONFETTI_LAYOUT.map((piece, index) => (
+                      <span
+                        key={`${student.id}-confetti-${index}`}
+                        className={`birthday-confetti-piece birthday-confetti-delay-${piece.delay}`}
+                        style={{
+                          backgroundColor: BIRTHDAY_CONFETTI_COLORS[index % BIRTHDAY_CONFETTI_COLORS.length],
+                          left: piece.left,
+                          top: piece.top,
+                          width: `${piece.size}px`,
+                          height: `${piece.size * 1.45}px`,
+                          opacity: 0.82,
+                          filter: 'blur(0.25px)',
+                          transform: `rotate(${piece.rotate})`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <div className="relative z-20 flex items-center justify-between gap-3">
                   <div>
                     <p className="font-heading text-lg font-bold text-ticksy-navy">{student.name}</p>
                     <p className="font-body text-sm text-ticksy-navy/60 mt-1">
                       {formatBirthdayLabel(student.birthday)}
-                      {student.age != null ? ` · Turning ${student.age + 1}` : ''}
                     </p>
                   </div>
-                  <div className="rounded-full bg-white/80 px-3 py-1 text-xs font-body font-bold text-pink-600 shadow-[0_4px_14px_rgba(255,182,212,0.25)]">
-                    Birthday
+                  <div className="rounded-full bg-white/85 px-3 py-1 text-xs font-body font-bold text-pink-600 shadow-[0_4px_14px_rgba(255,182,212,0.25)]">
+                    {getTurnsAgeLabel(student.birthday) || 'Birthday'}
                   </div>
                 </div>
               </div>

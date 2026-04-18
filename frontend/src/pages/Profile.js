@@ -50,24 +50,29 @@ export default function Profile() {
 
       const nextBatches = data || []
       setBatches(nextBatches)
+      if (nextBatches.length === 0) {
+        setBatchCounts({})
+        return
+      }
 
-      const countResults = await Promise.all(
-        nextBatches.map(async (batch) => {
-          const { data: studentSlots, error: countError } = await supabase
-            .from('student_slots')
-            .select('student_id')
-            .eq('slot_id', batch.id)
+      const batchIds = nextBatches.map((batch) => batch.id)
+      const { data: studentSlots, error: countError } = await supabase
+        .from('student_slots')
+        .select('slot_id, student_id')
+        .in('slot_id', batchIds)
 
-          if (countError) {
-            console.error(`Failed to load student count for batch ${batch.id}`, countError)
-            return [batch.id, 0]
-          }
+      if (countError) {
+        console.error('Failed to load batch student counts', countError)
+        setBatchCounts(Object.fromEntries(batchIds.map((batchId) => [batchId, 0])))
+        return
+      }
 
-          return [batch.id, (studentSlots || []).length]
-        })
-      )
+      const counts = Object.fromEntries(batchIds.map((batchId) => [batchId, 0]))
+      ;(studentSlots || []).forEach((entry) => {
+        counts[entry.slot_id] = (counts[entry.slot_id] || 0) + 1
+      })
 
-      setBatchCounts(Object.fromEntries(countResults))
+      setBatchCounts(counts)
     } catch (fetchError) {
       console.error('Failed to load profile batches', fetchError)
       setBatches([])

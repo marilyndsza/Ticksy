@@ -33,7 +33,7 @@ export default function Layout() {
           <button
             data-testid="logout-btn"
             onClick={handleLogout}
-            className="inline-flex items-center gap-2 rounded-full border border-ticksy-blue/20 bg-white/70 px-4 py-2 font-body text-sm font-semibold text-ticksy-navy shadow-[0_4px_14px_rgba(15,27,76,0.08)] transition-all hover:-translate-y-0.5 hover:border-ticksy-blue/35 hover:bg-white"
+            className="inline-flex items-center gap-2 rounded-full border border-ticksy-blue/20 bg-white/70 px-4 py-2 font-body text-sm font-semibold text-ticksy-navy shadow-[0_4px_14px_rgba(15,27,76,0.08)] transition-transform hover:-translate-y-0.5 hover:border-ticksy-blue/35 hover:bg-white"
           >
             <LogOut size={15} className="text-ticksy-blue" />
             Logout
@@ -58,7 +58,7 @@ export default function Layout() {
           style={{
             height: 70,
             backgroundColor: '#1a2f7a',
-            boxShadow: '0 8px 32px rgba(15, 27, 76, 0.35)',
+            boxShadow: '0 8px 24px rgba(15, 27, 76, 0.28)',
           }}
         >
           {navItems.map((item) => {
@@ -74,8 +74,8 @@ export default function Layout() {
                 className="flex-1 flex items-center justify-center h-full outline-none"
               >
                 <div
-                  className={`relative flex items-center justify-center transition-all duration-200 ease-out ${
-                    isActive ? 'scale-[1.15] -translate-y-[10px]' : ''
+                  className={`relative flex items-center justify-center transition-transform duration-200 ease-out ${
+                    isActive ? 'scale-[1.1] -translate-y-[8px]' : ''
                   }`}
                 >
                   {isActive && (
