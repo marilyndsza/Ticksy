@@ -8,6 +8,7 @@ import {
   DAYS_SHORT,
   WEEKLY_DAYS,
   getModeBadgeLabel,
+  getAgeFromBirthday,
   formatSelectedDays,
   normalizeSelectedDays,
 } from '../lib/studentSchedule'
@@ -112,7 +113,7 @@ export default function Students() {
   const [name, setName] = useState('')
   const [medicalHistory, setMedicalHistory] = useState('')
   const [dateJoined, setDateJoined] = useState('')
-  const [age, setAge] = useState('')
+  const [birthday, setBirthday] = useState('')
   const [paymentMode, setPaymentMode] = useState('cash')
   const [feeAmount, setFeeAmount] = useState('')
   const [mode, setMode] = useState('weekly')
@@ -193,7 +194,7 @@ export default function Students() {
     setName('')
     setMedicalHistory('')
     setDateJoined('')
-    setAge('')
+    setBirthday('')
     setPaymentMode('cash')
     setFeeAmount('')
     setMode('weekly')
@@ -213,7 +214,7 @@ export default function Students() {
     setName(student.name)
     setMedicalHistory(student.medical_history || '')
     setDateJoined(student.date_joined || '')
-    setAge(student.age != null ? String(student.age) : '')
+    setBirthday(student.birthday || '')
     setPaymentMode(student.payment_mode || 'cash')
     setFeeAmount(student.fee_amount != null ? String(student.fee_amount) : '')
     setMode(student.mode === 'alternate' ? 'custom' : (student.mode || 'weekly'))
@@ -254,7 +255,7 @@ export default function Students() {
       name: name.trim(),
       medical_history: medicalHistory.trim() || null,
       date_joined: dateJoined || null,
-      age: age.trim() ? Number(age) : null,
+      birthday: birthday || null,
       payment_mode: paymentMode || null,
       fee_amount: feeAmount.trim() ? Number(feeAmount) : null,
       mode,
@@ -388,23 +389,12 @@ export default function Students() {
                         {formatSelectedDays(student)}
                       </p>
                     )}
-                    {student.medical_history && (
-                      <p className="font-body text-xs text-ticksy-navy/50 mt-1 truncate">
-                        Medical: {student.medical_history}
-                      </p>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                      {student.age != null && (
-                        <p className="font-body text-xs text-ticksy-navy/50">
-                          Age: {student.age}
-                        </p>
-                      )}
-                      {student.date_joined && (
-                        <p className="font-body text-xs text-ticksy-navy/50">
-                          Joined: {formatDisplayDate(student.date_joined)}
-                        </p>
-                      )}
-                    </div>
+                    <p className="font-body text-xs text-ticksy-navy/50 mt-1 truncate">
+                      {[
+                        student.medical_history ? `Medical: ${student.medical_history}` : null,
+                        getAgeFromBirthday(student.birthday) != null ? `Age: ${getAgeFromBirthday(student.birthday)}` : null,
+                      ].filter(Boolean).join(' | ') || 'No extra details added'}
+                    </p>
                   </div>
                 </button>
               ))}
@@ -462,16 +452,12 @@ export default function Students() {
               </div>
 
               <div>
-                <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Age</label>
+                <label className="text-sm font-bold text-ticksy-navy ml-2 font-body">Birthday</label>
                 <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  step="1"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
+                  type="date"
+                  value={birthday}
+                  onChange={(e) => setBirthday(e.target.value)}
                   className="ticksy-input mt-1"
-                  placeholder="45"
                 />
               </div>
             </div>
@@ -520,7 +506,7 @@ export default function Students() {
                 <div className="flex items-center gap-3">
                   <div className={`h-4 w-4 rounded-full border-2 ${mode === 'weekly' ? 'border-ticksy-blue bg-ticksy-blue' : 'border-ticksy-navy/20'}`} />
                   <div>
-                    <p className="font-body font-semibold text-ticksy-navy">Weekly</p>
+                    <p className="font-body font-semibold text-ticksy-navy">Daily</p>
                     <p className="font-body text-xs text-ticksy-navy/50">Mon to Fri</p>
                   </div>
                 </div>

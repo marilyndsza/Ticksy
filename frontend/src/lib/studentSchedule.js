@@ -26,7 +26,25 @@ export const formatSelectedDays = (student) => {
 }
 
 export const getModeBadgeLabel = (student) =>
-  isCustomMode(student?.mode) ? 'C' : 'W'
+  isCustomMode(student?.mode) ? 'C' : 'D'
+
+export const getModeLabel = (student) =>
+  isCustomMode(student?.mode) ? 'Custom' : 'Daily'
+
+export const getAgeFromBirthday = (birthday) => {
+  if (!birthday) return null
+  const [year, month, day] = String(birthday).split('-').map(Number)
+  if (!year || !month || !day) return null
+
+  const today = new Date()
+  let age = today.getFullYear() - year
+  const hasHadBirthdayThisYear =
+    today.getMonth() + 1 > month ||
+    (today.getMonth() + 1 === month && today.getDate() >= day)
+
+  if (!hasHadBirthdayThisYear) age -= 1
+  return age >= 0 ? age : null
+}
 
 // Backward-compatible aliases so hot-reloaded modules using the old naming
 // don't crash while the dev server refreshes.

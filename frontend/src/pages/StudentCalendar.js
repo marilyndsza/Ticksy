@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Calendar } from '../components/ui/calendar'
-import { DAYS_SHORT, getModeBadgeLabel, getStudentSelectedDays, formatSelectedDays } from '../lib/studentSchedule'
+import { DAYS_SHORT, getModeBadgeLabel, getStudentSelectedDays, formatSelectedDays, getModeLabel } from '../lib/studentSchedule'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { CalendarDays, ChevronDown, Download, UserRound } from 'lucide-react'
@@ -392,7 +392,7 @@ export default function StudentCalendar() {
       body: monthlySummary.map((student) => [
         student.name,
         formatJoinedDate(student),
-        student.mode === 'custom' ? 'Custom' : 'Weekly',
+        getModeLabel(student),
         formatReportDays(student),
         String(student.presentCount),
         String(student.absentCount),

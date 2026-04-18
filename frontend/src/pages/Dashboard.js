@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useUI } from '../contexts/UIContext'
 import { supabase } from '../lib/supabase'
-import { attendsOnDay } from '../lib/studentSchedule'
+import { attendsOnDay, getAgeFromBirthday } from '../lib/studentSchedule'
 import { ChevronRight, Clock, ImagePlus, Pin, Trash2, Users, X } from 'lucide-react'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -205,6 +205,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [todaySlots, setTodaySlots] = useState([])
   const [studentCounts, setStudentCounts] = useState({})
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState([])
   const [checklists, setChecklists] = useState([])
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
@@ -224,6 +225,7 @@ export default function Dashboard() {
     if (!user) return
     fetchTodaySlots()
     fetchChecklists()
+    fetchUpcomingBirthdays()
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -257,6 +259,46 @@ export default function Dashboard() {
       setStudentCounts(counts)
     }
     setLoading(false)
+  }
+
+  const fetchUpcomingBirthdays = async () => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('students')
+      .select('id, name, birthday')
+      .eq('user_id', user.id)
+      .not('birthday', 'is', null)
+      .order('name', { ascending: true })
+
+    if (error || !data) {
+      setUpcomingBirthdays([])
+      return
+    }
+
+    const currentMonth = today.getMonth() + 1
+    const currentDay = today.getDate()
+
+    const birthdaysThisMonth = data
+      .map((student) => {
+        const [year, month, day] = String(student.birthday || '').split('-').map(Number)
+        if (!year || !month || !day || month !== currentMonth) return null
+        return {
+          ...student,
+          month,
+          day,
+          age: getAgeFromBirthday(student.birthday),
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const aUpcoming = a.day >= currentDay ? 0 : 1
+        const bUpcoming = b.day >= currentDay ? 0 : 1
+        if (aUpcoming !== bUpcoming) return aUpcoming - bUpcoming
+        return a.day - b.day
+      })
+
+    setUpcomingBirthdays(birthdaysThisMonth)
   }
 
   const fetchChecklists = async () => {
@@ -465,6 +507,16 @@ export default function Dashboard() {
     return `${displayHour}:${m} ${ampm}`
   }
 
+  const formatBirthdayLabel = (birthday) => {
+    if (!birthday) return ''
+    const [year, month, day] = String(birthday).split('-').map(Number)
+    if (!year || !month || !day) return ''
+    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    })
+  }
+
   return (
     <div data-testid="dashboard-page" className="space-y-8">
       <div>
@@ -572,6 +624,46 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      <section className="space-y-4">
+        <div className="flex items-baseline gap-2">
+          <h2 className="font-heading text-xl font-bold text-ticksy-navy">Upcoming Birthdays</h2>
+          <p className="font-body text-sm text-ticksy-navy/55">- This month</p>
+        </div>
+
+        {upcomingBirthdays.length === 0 ? (
+          <div className="ticksy-card border-dashed !border-[#FFD7E8] bg-[linear-gradient(135deg,#FFF8FB_0%,#F8F1FF_100%)]">
+            <p className="font-heading text-lg font-bold text-ticksy-navy">No birthdays lined up this month</p>
+            <p className="font-body text-sm text-ticksy-navy/55 mt-2">
+              Add birthdays to student profiles and Ticksy will surface them here as a gentle reminder.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {upcomingBirthdays.map((student) => (
+              <div
+                key={student.id}
+                className="relative overflow-hidden rounded-[24px] border border-[#F5C6DD] bg-[linear-gradient(135deg,#FFF7FB_0%,#FFF1F7_52%,#F5F6FF_100%)] p-5 shadow-[0_10px_24px_rgba(15,27,76,0.08)]"
+              >
+                <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[radial-gradient(circle,rgba(255,191,219,0.5)_0%,rgba(255,191,219,0.08)_58%,transparent_78%)]" />
+                <div className="pointer-events-none absolute bottom-0 left-0 h-16 w-24 rounded-full bg-[radial-gradient(circle,rgba(180,203,255,0.42)_0%,rgba(180,203,255,0.1)_54%,transparent_78%)]" />
+                <div className="relative flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-heading text-lg font-bold text-ticksy-navy">{student.name}</p>
+                    <p className="font-body text-sm text-ticksy-navy/60 mt-1">
+                      {formatBirthdayLabel(student.birthday)}
+                      {student.age != null ? ` · Turning ${student.age + 1}` : ''}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-white/80 px-3 py-1 text-xs font-body font-bold text-pink-600 shadow-[0_4px_14px_rgba(255,182,212,0.25)]">
+                    Birthday
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {showUpload && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 pt-20 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:items-center sm:py-6" onClick={() => setShowUpload(false)}>
