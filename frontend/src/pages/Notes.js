@@ -72,7 +72,7 @@ function NoteCard({ note, index, onDelete, onTogglePin, onDragStart, onDragOver,
       onDragStart={() => onDragStart(note.id)}
       onDragOver={(event) => onDragOver(event, note.id)}
       onDrop={() => onDrop(note.id)}
-      className={`group relative min-h-[132px] rounded-[22px] border p-4 shadow-[0_12px_28px_rgba(15,27,76,0.08)] transition-transform duration-200 hover:-translate-y-1 ${style.bg} ${style.border} ${note.is_pinned ? 'ring-2 ring-white/70' : ''}`}
+      className={`perf-card group relative min-h-[132px] rounded-[22px] border p-4 shadow-[0_8px_18px_rgba(15,27,76,0.06)] transition-transform duration-200 hover:-translate-y-0.5 ${style.bg} ${style.border} ${note.is_pinned ? 'ring-2 ring-white/70' : ''}`}
     >
       <div className={`pointer-events-none absolute left-1/2 top-0 h-4 w-16 -translate-x-1/2 -translate-y-1 rounded-b-2xl shadow-sm ${style.tape}`} />
       <div className="pointer-events-none absolute right-0 top-0 h-10 w-10 translate-x-4 -translate-y-4 rotate-45 rounded-[10px] bg-white/35" />
@@ -325,8 +325,8 @@ export default function Notes() {
           <p className="px-1 font-body text-sm font-medium text-ticksy-navy/55">
             Drag notes to reshuffle them. Pin a note to keep it at the top of the board.
           </p>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {orderedNotes.map((note, i) => (
+        <div className="perf-section grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {orderedNotes.map((note, i) => (
               <NoteCard
                 key={note.id}
                 note={note}
@@ -345,7 +345,7 @@ export default function Notes() {
       <button
         data-testid="add-note-fab"
         onClick={() => setShowAdd(true)}
-        className="fixed z-40 w-14 h-14 rounded-full bg-ticksy-blue text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform"
+        className="fixed z-40 w-14 h-14 rounded-full bg-ticksy-blue text-white flex items-center justify-center shadow-[0_10px_22px_rgba(43,79,200,0.22)] hover:scale-105 active:scale-95 transition-transform"
         style={{ bottom: 160, right: 20 }}
       >
         <Plus size={28} />

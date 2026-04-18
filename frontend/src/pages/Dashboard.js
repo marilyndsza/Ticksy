@@ -137,17 +137,15 @@ const WorkoutChecklistCard = memo(function WorkoutChecklistCard({ checklist, onT
   const completed = items.filter((item) => item.done).length
 
   return (
-    <div className="relative overflow-hidden rounded-[26px] border border-transparent bg-[linear-gradient(135deg,#2443C5_0%,#6F8CFF_38%,#F3BDD8_100%)] p-[1.5px] shadow-[0_16px_34px_rgba(43,79,200,0.16)]">
+    <div className="perf-card relative overflow-hidden rounded-[26px] border border-transparent bg-[linear-gradient(135deg,#2443C5_0%,#6F8CFF_38%,#F3BDD8_100%)] p-[1.5px] shadow-[0_12px_24px_rgba(43,79,200,0.12)]">
       <div className="pointer-events-none absolute inset-0 opacity-100">
-        <div className="absolute -left-12 top-4 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(124,164,255,0.5)_0%,rgba(124,164,255,0.18)_42%,transparent_74%)] blur-2xl" />
-        <div className="absolute right-6 top-0 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(246,189,216,0.44)_0%,rgba(246,189,216,0.14)_44%,transparent_74%)] blur-2xl" />
-        <div className="absolute bottom-2 left-1/2 h-24 w-56 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.58)_0%,rgba(255,255,255,0.16)_38%,transparent_74%)] blur-2xl" />
+        <div className="absolute -left-10 top-4 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(124,164,255,0.38)_0%,rgba(124,164,255,0.1)_48%,transparent_74%)]" />
+        <div className="absolute right-6 top-0 h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(246,189,216,0.32)_0%,rgba(246,189,216,0.1)_48%,transparent_74%)]" />
       </div>
       <div className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(135deg,rgba(244,249,255,0.97)_0%,rgba(229,239,255,0.98)_34%,rgba(255,239,247,0.9)_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.38)_10%,rgba(255,255,255,0.08)_30%,rgba(140,181,255,0.1)_58%,rgba(246,189,216,0.1)_86%)]" />
-        <div className="pointer-events-none absolute -left-8 top-6 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(91,142,255,0.32)_0%,rgba(91,142,255,0.08)_44%,transparent_76%)] blur-xl" />
-        <div className="pointer-events-none absolute right-10 top-8 h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.66)_0%,rgba(255,255,255,0.14)_44%,transparent_76%)] blur-xl" />
-        <div className="pointer-events-none absolute bottom-4 right-16 h-28 w-36 rounded-full bg-[radial-gradient(circle,rgba(247,201,223,0.26)_0%,rgba(247,201,223,0.08)_44%,transparent_76%)] blur-xl" />
+        <div className="pointer-events-none absolute -left-8 top-6 h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(91,142,255,0.24)_0%,rgba(91,142,255,0.06)_44%,transparent_76%)]" />
+        <div className="pointer-events-none absolute bottom-4 right-16 h-24 w-32 rounded-full bg-[radial-gradient(circle,rgba(247,201,223,0.18)_0%,rgba(247,201,223,0.05)_44%,transparent_76%)]" />
       <div className="relative z-10 flex items-start justify-between gap-4">
         <div>
           <p className="font-heading text-lg font-bold text-ticksy-navy">
@@ -591,7 +589,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <section className="space-y-4">
+      <section className="perf-section space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-heading text-xl font-bold text-ticksy-navy">Workout Checklists</h2>
@@ -635,7 +633,7 @@ export default function Dashboard() {
         )}
       </section>
 
-      <div>
+      <div className="perf-section">
         <h2 className="font-heading text-xl font-bold text-ticksy-navy mb-4">
           Today&apos;s Batches
         </h2>
@@ -688,7 +686,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <section className="space-y-4">
+      <section className="perf-section space-y-4">
         <div className="flex items-baseline gap-2">
           <h2 className="font-heading text-xl font-bold text-ticksy-navy">Upcoming Birthdays 🎉</h2>
           <p className="font-body text-sm text-ticksy-navy/55">- this month</p>
@@ -722,7 +720,6 @@ export default function Dashboard() {
                           width: `${piece.size}px`,
                           height: `${piece.size * 1.45}px`,
                           opacity: 0.82,
-                          filter: 'blur(0.25px)',
                           transform: `rotate(${piece.rotate})`,
                         }}
                       />

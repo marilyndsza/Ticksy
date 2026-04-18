@@ -251,22 +251,13 @@ export default function StudentCalendar() {
   const overviewStats = useMemo(() => {
     const totals = monthlySummary.reduce((acc, student) => ({
       students: acc.students + 1,
-      presentPctTotal: acc.presentPctTotal + student.pct,
-      absentPctTotal: acc.absentPctTotal + student.absentPct,
-    }), { students: 0, presentPctTotal: 0, absentPctTotal: 0 })
-
-    const presentPct = totals.students > 0 ? Math.round(totals.presentPctTotal / totals.students) : 0
-    const absentPct = totals.students > 0 ? Math.round(totals.absentPctTotal / totals.students) : 0
-    const expectedSessions = monthlySummary.reduce(
-      (max, student) => Math.max(max, student.totalExpected || 0),
-      0
-    )
+      totalPresent: acc.totalPresent + (student.presentCount || 0),
+      totalAbsent: acc.totalAbsent + (student.absentCount || 0),
+      totalSessions: acc.totalSessions + (student.totalExpected || 0),
+    }), { students: 0, totalPresent: 0, totalAbsent: 0, totalSessions: 0 })
 
     return {
-      students: totals.students,
-      scheduled: expectedSessions,
-      presentPct,
-      absentPct,
+      ...totals,
       holidays: holidays.length,
     }
   }, [monthlySummary, holidays.length])
@@ -345,9 +336,9 @@ export default function StudentCalendar() {
     const statGap = 12
     const stats = [
       ['Students', String(overviewStats.students)],
-      ['Present %', `${overviewStats.presentPct}%`],
-      ['Absent %', `${overviewStats.absentPct}%`],
-      ['Expected Sessions', String(overviewStats.scheduled)],
+      ['Total Present', String(overviewStats.totalPresent)],
+      ['Total Absent', String(overviewStats.totalAbsent)],
+      ['Total Sessions', String(overviewStats.totalSessions)],
     ]
 
     stats.forEach(([label, value], index) => {
@@ -587,8 +578,16 @@ export default function StudentCalendar() {
       <div>
         <h1 className="font-heading text-4xl sm:text-5xl font-bold text-[#0D3CA4]">Calendar</h1>
         <p className="font-heading text-lg font-semibold tracking-wide text-ticksy-navy/70 mt-2">
-          Here's your overview for the month of {monthLabel}.
+          Here's your overview for the month of <span className="text-[#0D3CA4]">{monthLabel}</span>.
         </p>
+        {selectedBatch && (
+          <div className="mt-3 inline-flex items-center rounded-full bg-[#2443C5] px-4 py-2 text-sm font-body font-semibold text-white shadow-[0_8px_20px_rgba(36,67,197,0.18)]">
+            Currently showing data for:
+            <span className="ml-2 font-heading text-base font-black tracking-[0.01em] text-white">
+              {selectedBatch.title}
+            </span>
+          </div>
+        )}
       </div>
 
       {selectedBatch && monthlySummary.length > 0 && (
@@ -596,9 +595,6 @@ export default function StudentCalendar() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="font-heading text-xl font-bold text-ticksy-navy">Monthly Overview</p>
-              <p className="font-body text-sm text-ticksy-navy/50">
-                {selectedBatch.title} · {fullMonthLabel}
-              </p>
             </div>
             <button
               type="button"
@@ -616,16 +612,16 @@ export default function StudentCalendar() {
               <p className="font-body text-xs text-ticksy-navy/60">Students</p>
             </div>
             <div className="rounded-2xl bg-green-50 px-4 py-3">
-              <p className="font-heading text-2xl font-bold text-green-600">{overviewStats.presentPct}%</p>
-              <p className="font-body text-xs text-ticksy-navy/60">Present Percentage</p>
+              <p className="font-heading text-2xl font-bold text-green-600">{overviewStats.totalPresent}</p>
+              <p className="font-body text-xs text-ticksy-navy/60">Total Present</p>
             </div>
             <div className="rounded-2xl bg-red-50 px-4 py-3">
-              <p className="font-heading text-2xl font-bold text-red-500">{overviewStats.absentPct}%</p>
-              <p className="font-body text-xs text-ticksy-navy/60">Absent Percentage</p>
+              <p className="font-heading text-2xl font-bold text-red-500">{overviewStats.totalAbsent}</p>
+              <p className="font-body text-xs text-ticksy-navy/60">Total Absent</p>
             </div>
             <div className="rounded-2xl bg-blue-50 px-4 py-3">
-              <p className="font-heading text-2xl font-bold text-blue-600">{overviewStats.scheduled}</p>
-              <p className="font-body text-xs text-ticksy-navy/60">Expected Sessions</p>
+              <p className="font-heading text-2xl font-bold text-blue-600">{overviewStats.totalSessions}</p>
+              <p className="font-body text-xs text-ticksy-navy/60">Total Sessions</p>
             </div>
           </div>
 
@@ -637,27 +633,67 @@ export default function StudentCalendar() {
         </div>
       )}
 
-      <div className="ticksy-card space-y-3">
+      {monthlySummary.length > 0 && (
+        <div className="ticksy-card !p-0 overflow-hidden">
+          <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(15,27,76,0.08)' }}>
+            <h3 className="font-heading text-xl font-bold text-ticksy-navy">Monthly Summary</h3>
+          </div>
+          <div className="grid grid-cols-[56px_minmax(0,1.8fr)_minmax(92px,1fr)_88px_88px] gap-3 border-b bg-[#F7FAFF] px-5 py-3 text-[11px] font-body font-semibold uppercase tracking-[0.12em] text-ticksy-navy/45" style={{ borderColor: 'rgba(15,27,76,0.08)' }}>
+            <span>No.</span>
+            <span>Student</span>
+            <span>Total Sessions</span>
+            <span>Present</span>
+            <span>Absent</span>
+          </div>
+          <div
+            className="max-h-[360px] overflow-y-auto divide-y"
+            style={{ borderColor: 'rgba(15,27,76,0.06)' }}
+          >
+            {monthlySummary.map((s, index) => (
+              <div
+                key={s.id}
+                className="grid grid-cols-[56px_minmax(0,1.8fr)_minmax(92px,1fr)_88px_88px] gap-3 px-5 py-4 items-center"
+              >
+                <span className="font-body text-sm font-semibold tabular-nums text-ticksy-navy/75">{index + 1}.</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-body font-semibold text-sm text-ticksy-navy">{s.name}</span>
+                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                      {getModeBadgeLabel(s)}
+                    </span>
+                  </div>
+                </div>
+                <span className="font-body text-sm font-semibold tabular-nums text-ticksy-navy/75">{s.totalExpected}</span>
+                <span className="font-body text-sm font-semibold tabular-nums text-green-600">{s.presentCount}</span>
+                <span className="font-body text-sm font-semibold tabular-nums text-red-500">{s.absentCount}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="ticksy-card space-y-5 overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(245,249,255,0.94)_100%)]">
+        <div className="space-y-3 rounded-[28px] border border-ticksy-blue/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(244,248,255,0.92)_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
         <div className="relative">
           <button data-testid="batch-selector" onClick={() => { setBatchDrop(!batchDrop); setStudentDrop(false) }}
-            className="w-full flex items-center justify-between rounded-2xl border border-ticksy-navy/10 bg-white px-4 py-4 cursor-pointer">
+            className="w-full flex items-center justify-between rounded-2xl border border-[#2A47B8] bg-[#2443C5] px-4 py-4 cursor-pointer shadow-[0_10px_22px_rgba(36,67,197,0.18)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-ticksy-blue">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-ticksy-blue shadow-[0_6px_14px_rgba(255,255,255,0.18)]">
                 <CalendarDays size={18} />
               </div>
               <div className="leading-tight">
-                <p className="font-body text-xs text-ticksy-navy/40 m-0">Batch</p>
-                <p className="font-heading font-bold text-ticksy-navy">{selectedBatch?.title || 'Select batch'}</p>
+                <p className="font-body text-xs text-white/65 m-0">Batch</p>
+                <p className="font-heading font-bold text-white">{selectedBatch?.title || 'Select batch'}</p>
               </div>
             </div>
-            <ChevronDown size={20} className={`text-ticksy-navy/50 transition-transform ${batchDrop ? 'rotate-180' : ''}`} />
+            <ChevronDown size={20} className={`text-white/75 transition-transform ${batchDrop ? 'rotate-180' : ''}`} />
           </button>
           {batchDrop && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-ticksy-navy rounded-2xl overflow-hidden z-20 shadow-lg">
               {batches.map(b => (
                 <button key={b.id} onClick={() => { setSelectedBatchId(b.id); setBatchDrop(false); setSelectedDate(null) }}
                   className={`w-full text-left px-4 py-3 font-body font-semibold text-ticksy-navy hover:bg-ticksy-pink-light ${b.id === selectedBatchId ? 'bg-ticksy-pink' : ''}`}>
-                  {b.title} <span className="text-xs text-ticksy-navy/40 ml-1">{DAYS_SHORT[b.day_of_week]}</span>
+                  {b.title}
                 </button>
               ))}
             </div>
@@ -667,29 +703,29 @@ export default function StudentCalendar() {
         {batchStudents.length > 0 && (
           <div className="relative">
             <button data-testid="student-selector" onClick={() => { setStudentDrop(!studentDrop); setBatchDrop(false) }}
-              className="w-full flex items-center justify-between rounded-2xl border border-ticksy-navy/10 bg-white px-4 py-4 cursor-pointer">
+              className="w-full flex items-center justify-between rounded-2xl border border-[#2A47B8] bg-[#2443C5] px-4 py-4 cursor-pointer shadow-[0_10px_22px_rgba(36,67,197,0.18)]">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-pink-50 text-pink-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-pink-500 shadow-[0_6px_14px_rgba(255,255,255,0.18)]">
                   <UserRound size={18} />
                 </div>
                 <div className="leading-tight">
-                  <p className="font-body text-xs text-ticksy-navy/40 m-0">Student</p>
-                  <p className="font-heading font-bold text-ticksy-navy">
+                  <p className="font-body text-xs text-white/65 m-0">Student</p>
+                  <p className="font-heading font-bold text-white">
                     {selectedStudent?.name || 'Select student'}
                   {selectedStudent?.mode && (
-                    <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-body text-blue-700">
+                    <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-body text-ticksy-blue">
                       {getModeBadgeLabel(selectedStudent)}
                     </span>
                   )}
                 </p>
                 {(selectedStudent?.mode === 'custom' || selectedStudent?.mode === 'alternate') && (
-                  <p className="font-body text-xs text-amber-700 mt-1">
+                  <p className="font-body text-xs text-[#DDE7FF] mt-1">
                     Custom: {formatSelectedDays(selectedStudent)}
                   </p>
                 )}
                 </div>
               </div>
-              <ChevronDown size={20} className={`text-ticksy-navy/50 transition-transform ${studentDrop ? 'rotate-180' : ''}`} />
+              <ChevronDown size={20} className={`text-white/75 transition-transform ${studentDrop ? 'rotate-180' : ''}`} />
             </button>
             {studentDrop && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-ticksy-navy rounded-2xl overflow-hidden z-20 shadow-lg">
@@ -706,34 +742,34 @@ export default function StudentCalendar() {
             )}
           </div>
         )}
-      </div>
+        </div>
 
       {loading ? (
-        <div className="ticksy-card animate-pulse h-80" />
+        <div className="animate-pulse h-80 rounded-[28px] border border-ticksy-blue/10 bg-white/80" />
       ) : !selectedBatchId ? (
-        <div className="ticksy-card text-center py-12">
+        <div className="rounded-[28px] border border-ticksy-blue/10 bg-white/80 py-12 text-center">
           <p className="font-heading text-lg font-bold text-ticksy-navy/50">No batches yet</p>
         </div>
       ) : (
         <>
           {/* Stats */}
           <div className="flex gap-3">
-            <div className="flex-1 ticksy-card !p-3 text-center">
+            <div className="flex-1 rounded-[22px] border border-ticksy-blue/20 bg-white/92 px-3 py-3 text-center shadow-[0_6px_18px_rgba(15,27,76,0.04)]">
               <p className="font-heading text-xl font-bold text-green-600">{presentCount}</p>
               <p className="font-body text-xs text-ticksy-navy/60">Present</p>
             </div>
-            <div className="flex-1 ticksy-card !p-3 text-center">
+            <div className="flex-1 rounded-[22px] border border-ticksy-blue/20 bg-white/92 px-3 py-3 text-center shadow-[0_6px_18px_rgba(15,27,76,0.04)]">
               <p className="font-heading text-xl font-bold text-red-500">{absentCount}</p>
               <p className="font-body text-xs text-ticksy-navy/60">Absent</p>
             </div>
-            <div className="flex-1 ticksy-card !p-3 text-center">
+            <div className="flex-1 rounded-[22px] border border-ticksy-blue/20 bg-white/92 px-3 py-3 text-center shadow-[0_6px_18px_rgba(15,27,76,0.04)]">
               <p className="font-heading text-xl font-bold text-blue-500">{scheduledCount}</p>
               <p className="font-body text-xs text-ticksy-navy/60">Scheduled</p>
             </div>
           </div>
 
           {/* Calendar */}
-          <div className="ticksy-card flex justify-center !p-4 sm:!p-6">
+          <div className="flex justify-center rounded-[28px] border border-ticksy-blue/16 bg-white/96 p-4 shadow-[0_8px_24px_rgba(15,27,76,0.05)] sm:p-6">
             <Calendar
               mode="single"
               month={month}
@@ -774,7 +810,7 @@ export default function StudentCalendar() {
           </div>
 
           {selectedStudent && selectedDate && (
-            <div className="ticksy-card space-y-3">
+            <div className="space-y-3 rounded-[24px] border border-ticksy-blue/16 bg-white/96 p-4 shadow-[0_8px_24px_rgba(15,27,76,0.05)]">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-heading text-lg font-bold text-ticksy-navy">Mark Specific Day</p>
@@ -880,7 +916,7 @@ export default function StudentCalendar() {
           )}
 
           {/* Legend */}
-          <div className="flex items-center justify-center gap-4 flex-wrap">
+          <div className="flex items-center justify-center gap-4 flex-wrap border-t border-ticksy-blue/10 pt-1">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-green-500" />
               <span className="font-body text-xs text-ticksy-navy/70">Present</span>
@@ -899,37 +935,9 @@ export default function StudentCalendar() {
             </div>
           </div>
 
-          {/* Monthly Summary */}
-          {monthlySummary.length > 0 && (
-            <div className="ticksy-card !p-0 overflow-hidden">
-              <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(15,27,76,0.08)' }}>
-                <h3 className="font-heading font-bold text-ticksy-navy text-base">Monthly Summary</h3>
-                <p className="font-body text-xs text-ticksy-navy/40">
-                  {fullMonthLabel}
-                </p>
-              </div>
-              <div className="divide-y" style={{ borderColor: 'rgba(15,27,76,0.06)' }}>
-                {monthlySummary.map(s => (
-                  <div key={s.id} className="flex items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-body font-semibold text-ticksy-navy text-sm">{s.name}</span>
-                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                        'bg-blue-100 text-blue-700'
-                      }`}>{getModeBadgeLabel(s)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-body text-xs text-ticksy-navy/50">{s.presentCount}/{s.totalExpected}</span>
-                      <span className={`font-heading font-bold text-sm ${
-                        s.pct >= 75 ? 'text-green-600' : s.pct >= 50 ? 'text-amber-500' : 'text-red-500'
-                      }`}>{s.pct}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
+      </div>
     </div>
   )
 }

@@ -5,6 +5,15 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.perf-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 640px;
+}
+
+.perf-card {
+  contain: layout paint style;
+}
+
 .ticksy-input {
   @apply w-full rounded-full border-2 bg-white px-6 py-3 text-ticksy-navy placeholder-slate-400 font-body font-medium transition-all;
   border-color: rgba(15, 27, 76, 0.3);
@@ -72,7 +81,6 @@ td:has(.calendar-makeup) {
   opacity: 0.82;
   transform-origin: center;
   animation: birthday-confetti-fall 3.2s linear infinite;
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.18);
 }
 
 .birthday-confetti-delay-0 { animation-delay: 0s; }
@@ -85,14 +93,14 @@ td:has(.calendar-makeup) {
 
 @keyframes birthday-confetti-fall {
   0% {
-    transform: translateY(-8px) rotate(0deg);
+    transform: translate3d(0, -8px, 0) rotate(0deg);
     opacity: 0;
   }
   12% {
     opacity: 0.82;
   }
   100% {
-    transform: translateY(92px) rotate(360deg);
+    transform: translate3d(0, 92px, 0) rotate(360deg);
     opacity: 0;
   }
 }
