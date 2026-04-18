@@ -62,9 +62,30 @@ const clearSupabaseAuthStorage = () => {
   }
 }
 
+const hasCachedAuthSession = () => {
+  try {
+    const keys = Object.keys(window.localStorage)
+    return keys.some((key) => {
+      if (key === 'ticksy.local.session.v1') {
+        return Boolean(window.localStorage.getItem(key))
+      }
+
+      if (key.startsWith('sb-') && key.includes('-auth-token')) {
+        const value = window.localStorage.getItem(key)
+        return Boolean(value && value !== 'null')
+      }
+
+      return false
+    })
+  } catch (error) {
+    console.error('Failed to inspect auth cache', error)
+    return true
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => hasCachedAuthSession())
 
   useEffect(() => {
     const handleAuthRuntimeError = (event) => {
@@ -108,7 +129,11 @@ export function AuthProvider({ children }) {
       }
     }
 
-    bootstrapAuth()
+    if (!hasCachedAuthSession()) {
+      setLoading(false)
+    } else {
+      bootstrapAuth()
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)

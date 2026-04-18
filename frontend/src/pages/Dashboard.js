@@ -236,12 +236,28 @@ export default function Dashboard() {
   const reviewInputRefs = useRef([])
   const today = new Date()
   const dayOfWeek = today.getDay()
+
+  const scheduleDeferredWork = useCallback((work) => {
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const callbackId = window.requestIdleCallback(() => work(), { timeout: 1200 })
+      return () => window.cancelIdleCallback(callbackId)
+    }
+
+    const timeoutId = window.setTimeout(work, 120)
+    return () => window.clearTimeout(timeoutId)
+  }, [])
+
   useEffect(() => {
     if (!user) return
     fetchTodaySlots()
-    fetchChecklists()
-    fetchUpcomingBirthdays()
-  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    const cancelDeferred = scheduleDeferredWork(() => {
+      fetchChecklists()
+      fetchUpcomingBirthdays()
+    })
+
+    return cancelDeferred
+  }, [user, scheduleDeferredWork]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setNavbarHidden(showUpload || Boolean(reviewChecklist))
@@ -335,7 +351,7 @@ export default function Dashboard() {
   const fetchChecklists = async () => {
     const { data } = await supabase
       .from('notes')
-      .select('*')
+      .select('id, title, checklist_items, created_at, keep_forever, workout_date')
       .eq('user_id', user.id)
       .eq('kind', 'checklist')
       .order('created_at', { ascending: false })
