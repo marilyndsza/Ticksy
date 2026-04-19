@@ -5,8 +5,6 @@ import { supabase } from '../lib/supabase'
 import { attendsOnDay } from '../lib/studentSchedule'
 import { Check, ChevronRight, ClipboardCheck, X } from 'lucide-react'
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
 export default function MarkAttendance() {
   const { user } = useAuth()
   const { setNavbarHidden } = useUI()
@@ -174,7 +172,7 @@ export default function MarkAttendance() {
                       <p className={`font-body text-sm ${
                         isSelected ? 'text-ticksy-navy/55' : 'text-ticksy-navy/60'
                       }`}>
-                        {DAYS[batch.day_of_week]} &middot; {formatTime(batch.start_time)}
+                        {formatTime(batch.start_time)}
                         {batch.end_time && ` – ${formatTime(batch.end_time)}`}
                       </p>
                       <p className="mt-1 font-body text-xs font-semibold uppercase tracking-[0.18em] text-ticksy-blue/65">

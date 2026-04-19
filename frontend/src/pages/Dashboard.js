@@ -13,7 +13,7 @@ const DATE_PATTERN = /(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/
 const CONTINUATION_CONNECTOR_PATTERN = /\b(with|and|or|to|for|of|in|on|into|from|using)$/i
 const BIRTHDAY_CONFETTI_COLORS = ['#FF6BAA', '#FFD166', '#7ED6A5', '#7BA8FF', '#FF9F1C', '#B28DFF']
 const BIRTHDAY_CONFETTI_LAYOUT = [
-  { left: '7%', top: '18%', delay: 0, size: 8, rotate: '-18deg' },
+  { left: '7%', top: '18%', delay: 5, size: 8, rotate: '-18deg' },
   { left: '12%', top: '9%', delay: 1, size: 10, rotate: '24deg' },
   { left: '19%', top: '20%', delay: 2, size: 9, rotate: '-8deg' },
   { left: '27%', top: '11%', delay: 3, size: 8, rotate: '12deg' },
@@ -269,20 +269,17 @@ export default function Dashboard() {
       .from('slots')
       .select('*')
       .eq('user_id', user.id)
-      .eq('day_of_week', dayOfWeek)
       .order('start_time', { ascending: true })
 
     if (!error && slots) {
-      setTodaySlots(slots)
-
       if (slots.length === 0) {
+        setTodaySlots([])
         setStudentCounts({})
         setLoading(false)
         return
       }
 
       const slotIds = slots.map((slot) => slot.id)
-      const dayBySlotId = Object.fromEntries(slots.map((slot) => [slot.id, slot.day_of_week]))
       const { data: studentSlots } = await supabase
         .from('student_slots')
         .select('slot_id, students(id, mode, selected_days, alternate_days)')
@@ -295,13 +292,18 @@ export default function Dashboard() {
 
       ;(studentSlots || []).forEach((entry) => {
         const student = entry.students
-        const slotDay = dayBySlotId[entry.slot_id]
-        if (student && attendsOnDay(student, slotDay)) {
+        if (student && attendsOnDay(student, dayOfWeek)) {
           counts[entry.slot_id] = (counts[entry.slot_id] || 0) + 1
         }
       })
 
-      setStudentCounts(counts)
+      const filteredSlots = slots.filter((slot) => (counts[slot.id] || 0) > 0)
+      const filteredCounts = Object.fromEntries(
+        Object.entries(counts).filter(([, count]) => count > 0)
+      )
+
+      setTodaySlots(filteredSlots)
+      setStudentCounts(filteredCounts)
     }
     setLoading(false)
   }
