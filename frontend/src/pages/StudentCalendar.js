@@ -638,36 +638,43 @@ export default function StudentCalendar() {
           <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(15,27,76,0.08)' }}>
             <h3 className="font-heading text-xl font-bold text-ticksy-navy">Monthly Summary</h3>
           </div>
-          <div className="grid grid-cols-[56px_minmax(0,1.8fr)_minmax(92px,1fr)_88px_88px] gap-3 border-b bg-[#F7FAFF] px-5 py-3 text-[11px] font-body font-semibold uppercase tracking-[0.12em] text-ticksy-navy/45" style={{ borderColor: 'rgba(15,27,76,0.08)' }}>
-            <span>No.</span>
-            <span>Student</span>
-            <span>Total Sessions</span>
-            <span>Present</span>
-            <span>Absent</span>
-          </div>
-          <div
-            className="max-h-[360px] overflow-y-auto divide-y"
-            style={{ borderColor: 'rgba(15,27,76,0.06)' }}
-          >
-            {monthlySummary.map((s, index) => (
+          <div className="overflow-x-auto">
+            <div className="min-w-[560px]">
               <div
-                key={s.id}
-                className="grid grid-cols-[56px_minmax(0,1.8fr)_minmax(92px,1fr)_88px_88px] gap-3 px-5 py-4 items-center"
+                className="grid grid-cols-[56px_minmax(180px,1.9fr)_minmax(120px,1fr)_88px_88px] gap-3 border-b bg-[#F7FAFF] px-5 py-3 text-[11px] font-body font-semibold uppercase tracking-[0.12em] text-ticksy-navy/45"
+                style={{ borderColor: 'rgba(15,27,76,0.08)' }}
               >
-                <span className="font-body text-sm font-semibold tabular-nums text-ticksy-navy/75">{index + 1}.</span>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-body font-semibold text-sm text-ticksy-navy">{s.name}</span>
-                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
-                      {getModeBadgeLabel(s)}
-                    </span>
-                  </div>
-                </div>
-                <span className="font-body text-sm font-semibold tabular-nums text-ticksy-navy/75">{s.totalExpected}</span>
-                <span className="font-body text-sm font-semibold tabular-nums text-green-600">{s.presentCount}</span>
-                <span className="font-body text-sm font-semibold tabular-nums text-red-500">{s.absentCount}</span>
+                <span>No.</span>
+                <span>Student</span>
+                <span>Total Sessions</span>
+                <span>Present</span>
+                <span>Absent</span>
               </div>
-            ))}
+              <div
+                className="max-h-[360px] overflow-y-auto divide-y"
+                style={{ borderColor: 'rgba(15,27,76,0.06)' }}
+              >
+                {monthlySummary.map((s, index) => (
+                  <div
+                    key={s.id}
+                    className="grid grid-cols-[56px_minmax(180px,1.9fr)_minmax(120px,1fr)_88px_88px] gap-3 px-5 py-4 items-center"
+                  >
+                    <span className="font-body text-sm font-semibold tabular-nums text-ticksy-navy/75">{index + 1}.</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-body font-semibold text-sm text-ticksy-navy">{s.name}</span>
+                        <span className="shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                          {getModeBadgeLabel(s)}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="font-body text-sm font-semibold tabular-nums text-ticksy-navy/75">{s.totalExpected}</span>
+                    <span className="font-body text-sm font-semibold tabular-nums text-green-600">{s.presentCount}</span>
+                    <span className="font-body text-sm font-semibold tabular-nums text-red-500">{s.absentCount}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
