@@ -638,10 +638,13 @@ export default function StudentCalendar() {
           <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(15,27,76,0.08)' }}>
             <h3 className="font-heading text-xl font-bold text-ticksy-navy">Monthly Summary</h3>
           </div>
-          <div className="overflow-x-auto">
+          <div
+            className="max-h-[360px] overflow-auto overscroll-contain"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             <div className="min-w-[560px]">
               <div
-                className="grid grid-cols-[56px_minmax(180px,1.9fr)_minmax(120px,1fr)_88px_88px] gap-3 border-b bg-[#F7FAFF] px-5 py-3 text-[11px] font-body font-semibold uppercase tracking-[0.12em] text-ticksy-navy/45"
+                className="sticky top-0 z-10 grid grid-cols-[56px_minmax(180px,1.9fr)_minmax(120px,1fr)_88px_88px] gap-3 border-b bg-[#F7FAFF] px-5 py-3 text-[11px] font-body font-semibold uppercase tracking-[0.12em] text-ticksy-navy/45"
                 style={{ borderColor: 'rgba(15,27,76,0.08)' }}
               >
                 <span>No.</span>
@@ -650,10 +653,7 @@ export default function StudentCalendar() {
                 <span>Present</span>
                 <span>Absent</span>
               </div>
-              <div
-                className="max-h-[360px] overflow-y-auto divide-y"
-                style={{ borderColor: 'rgba(15,27,76,0.06)' }}
-              >
+              <div className="divide-y" style={{ borderColor: 'rgba(15,27,76,0.06)' }}>
                 {monthlySummary.map((s, index) => (
                   <div
                     key={s.id}
