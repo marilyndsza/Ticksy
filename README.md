@@ -50,12 +50,12 @@ This is especially helpful for real-world use where trainers often prepare class
   </tr>
 </table>
 
-## what build this?
+## why'd i build this?
 This was a very real problem before it was a project.
 
 My mom already had her own system of mental notes, screenshots, gazillion whatsapp messages, physical attendance sheets & class plans, but it was scattered and hard to manage consistently. I wanted to build something that felt lightweight enough to actually use during a busy teaching day, while still being smart enough to reduce the mental load.
 
-## why I made the features the way they are?
+## why i made the features the way they are?
 
 I made the features the way they are because this is what I noticed about the actual trainer-to-student workflow:
 
